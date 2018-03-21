@@ -986,7 +986,7 @@ HI_S32 SAMPLE_COMM_IVE_BT1120_720P_PreView(SAMPLE_IVE_VI_VO_CONFIG_S *pstViVoCon
 			SAMPLE_PRT("SAMPLE_COMM_VENC_Start fail,VencChn(%d),Error(%#x)\n",VencChn,s32Ret);
 			goto END_720P_5;
 		}
-         s32Ret = SAMPLE_COMM_VENC_StartGetStream(1);
+         s32Ret = SAMPLE_COMM_VENC_StartGetStream(1, NULL);
         if (HI_SUCCESS != s32Ret)
         {
             SAMPLE_PRT("SAMPLE_COMM_VENC_StartGetStream fail,Error(%#x)\n",s32Ret);

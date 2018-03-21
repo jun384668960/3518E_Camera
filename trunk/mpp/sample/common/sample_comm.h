@@ -274,6 +274,8 @@ typedef struct sample_venc_getstream_s
 {
      HI_BOOL bThreadStart;
      HI_S32  s32Cnt;
+	 //add by donyj --- frame use call back function
+	 void (*callfun)(VENC_CHN, PAYLOAD_TYPE_E,VENC_STREAM_S *);
 }SAMPLE_VENC_GETSTREAM_PARA_S;
 
 typedef struct sample_vi_config_s
@@ -374,7 +376,8 @@ HI_S32 SAMPLE_COMM_VENC_Stop(VENC_CHN VencChn);
 HI_S32 SAMPLE_COMM_VENC_SnapStart(VENC_CHN VencChn, SIZE_S *pstSize, HI_BOOL bSupportDCF);
 HI_S32 SAMPLE_COMM_VENC_SnapProcess(VENC_CHN VencChn, HI_BOOL bSaveJpg, HI_BOOL bSaveThm);
 HI_S32 SAMPLE_COMM_VENC_SnapStop(VENC_CHN VencChn);
-HI_S32 SAMPLE_COMM_VENC_StartGetStream(HI_S32 s32Cnt);
+//HI_S32 SAMPLE_COMM_VENC_StartGetStream(HI_S32 s32Cnt);
+HI_S32 SAMPLE_COMM_VENC_StartGetStream(HI_S32 s32Cnt, void (*callfuct)(VENC_CHN, PAYLOAD_TYPE_E,VENC_STREAM_S *)); //add by donyj -- for call back
 HI_S32 SAMPLE_COMM_VENC_StopGetStream();
 HI_S32 SAMPLE_COMM_VENC_BindVpss(VENC_CHN VencChn,VPSS_GRP VpssGrp,VPSS_CHN VpssChn);
 HI_S32 SAMPLE_COMM_VENC_UnBindVpss(VENC_CHN VencChn,VPSS_GRP VpssGrp,VPSS_CHN VpssChn);

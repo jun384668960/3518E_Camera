@@ -1392,14 +1392,19 @@ HI_VOID* SAMPLE_COMM_VENC_GetVencStreamProc(HI_VOID *p)
                    stVencChnAttr.stVeAttr.enType, s32Ret);
             return NULL;
         }
-        sprintf(aszFileName[i], "stream_chn%d%s", i, szFilePostfix);
-        pFile[i] = fopen(aszFileName[i], "wb");
-        if (!pFile[i])
-        {
-            SAMPLE_PRT("open file[%s] failed!\n", 
-                   aszFileName[i]);
-            return NULL;
-        }
+
+		if(pstPara->callfun == NULL)
+		{
+			sprintf(aszFileName[i], "stream_chn%d%s", i, szFilePostfix);
+	        pFile[i] = fopen(aszFileName[i], "wb");
+	        if (!pFile[i])
+	        {
+	            SAMPLE_PRT("open file[%s] failed!\n", 
+	                   aszFileName[i]);
+	            return NULL;
+	        }
+		}
+
 
         /* Set Venc Fd. */
         VencFd[i] = HI_MPI_VENC_GetFd(i);
@@ -1496,14 +1501,22 @@ HI_VOID* SAMPLE_COMM_VENC_GetVencStreamProc(HI_VOID *p)
                     /*******************************************************
                      step 2.5 : save frame to file
                     *******************************************************/
-                    s32Ret = SAMPLE_COMM_VENC_SaveStream(enPayLoadType[i], pFile[i], &stStream);
-                    if (HI_SUCCESS != s32Ret)
-                    {
-                        free(stStream.pstPack);
-                        stStream.pstPack = NULL;
-                        SAMPLE_PRT("save stream failed!\n");
-                        break;
-                    }
+					if(pstPara->callfun != NULL)
+					{
+						pstPara->callfun(i,enPayLoadType[i],&stStream);
+					}
+					else
+					{
+	                 	s32Ret = SAMPLE_COMM_VENC_SaveStream(enPayLoadType[i], pFile[i], &stStream);
+	                    if (HI_SUCCESS != s32Ret)
+	                    {
+	                        free(stStream.pstPack);
+	                        stStream.pstPack = NULL;
+	                        SAMPLE_PRT("save stream failed!\n");
+	                        break;
+	                    }
+					}
+						
                     /*******************************************************
                      step 2.6 : release stream
                     *******************************************************/
@@ -1527,11 +1540,14 @@ HI_VOID* SAMPLE_COMM_VENC_GetVencStreamProc(HI_VOID *p)
     /*******************************************************
     * step 3 : close save-file
     *******************************************************/
-    for (i = 0; i < s32ChnTotal; i++)
-    {
-        fclose(pFile[i]);
-    }
-
+    if(pstPara->callfun == NULL)
+	{
+		for (i = 0; i < s32ChnTotal; i++)
+	    {
+	        fclose(pFile[i]);
+	    }
+	}
+	
     return NULL;
 }
 
@@ -1824,10 +1840,11 @@ HI_VOID *SAMPLE_COMM_VENC_GetVencStreamProc_Svc_t(void *p)
 /******************************************************************************
 * funciton : start get venc stream process thread
 ******************************************************************************/
-HI_S32 SAMPLE_COMM_VENC_StartGetStream(HI_S32 s32Cnt)
+HI_S32 SAMPLE_COMM_VENC_StartGetStream(HI_S32 s32Cnt, void (*callfuct)(VENC_CHN, PAYLOAD_TYPE_E,VENC_STREAM_S *))
 {
     gs_stPara.bThreadStart = HI_TRUE;
     gs_stPara.s32Cnt = s32Cnt;
+	gs_stPara.callfun = callfuct;
 
     return pthread_create(&gs_VencPid, 0, SAMPLE_COMM_VENC_GetVencStreamProc, (HI_VOID*)&gs_stPara);
 }

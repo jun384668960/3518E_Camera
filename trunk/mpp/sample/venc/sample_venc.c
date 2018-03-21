@@ -19,6 +19,11 @@ extern "C"{
 
 #include "sample_comm.h"
 
+#include <time.h>
+#include <unistd.h>
+#include "hzk_bitmap.h"
+#include "charset_convert.h"
+
 VIDEO_NORM_E gs_enNorm = VIDEO_ENCODING_MODE_NTSC;
 
 #ifdef hi3518ev201
@@ -38,6 +43,154 @@ HI_U32 g_u32BlkCnt = 10;
 
 #endif
 
+void local_time_get(char* tstr)
+{
+	char *wday[]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	time_t timep;
+	struct tm *p;
+	
+	time(&timep);
+	p=localtime(&timep);
+	
+	sprintf(tstr,"%d/%02d/%02d %s %02d:%02d:%02d", (1900+p->tm_year),(1+p->tm_mon), p->tm_mday
+		, wday[p->tm_wday],p->tm_hour, p->tm_min, p->tm_sec);
+}
+
+void file_time_get(char* tstr)
+{
+	time_t timep;
+	struct tm *p;
+	
+	time(&timep);
+	p=localtime(&timep);
+	
+	sprintf(tstr,"%d-%02d-%02d %02d-%02d-%02d", (1900+p->tm_year),(1+p->tm_mon), p->tm_mday
+		,p->tm_hour, p->tm_min, p->tm_sec);
+}
+
+void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *pstStream)
+{
+	//do some thing
+	if(VeChn == 0)
+	{
+		static FILE* h264 = NULL;
+		if(h264 == NULL)
+			h264 = fopen("./stream0.h264", "wb");
+		if(h264 != NULL)
+		{
+		    HI_S32 i;
+
+		    for (i = 0; i < pstStream->u32PackCount; i++)
+		    {
+		        fwrite(pstStream->pstPack[i].pu8Addr+pstStream->pstPack[i].u32Offset,
+		               pstStream->pstPack[i].u32Len-pstStream->pstPack[i].u32Offset, 1, h264);
+
+		        fflush(h264);
+		    }
+		}
+	}
+}
+
+
+HI_VOID *SAMPLE_RGN_UpdateBitmap(void *pData)
+{
+	RGN_HANDLE Handle;
+	BITMAP_S stBitmap;
+	HI_S32 s32Ret;
+	char t_str[1024] = {0};
+	
+	while(1)
+	{
+		char h0[1024] = {0}; 
+		
+		local_time_get(h0);
+		if(strcmp(t_str, h0) != 0)
+		{
+			char hz[1024] = {0};
+			size_t inLen = strlen(h0);
+			charset_convert_GB2312_HALF_TO_FULL(hz, 1024, h0, inLen );
+
+			///////////////////////////////////////////////////////////////////////
+			BITMAP_INFO_T info;
+			info.format = BMP_PIXEL_FORMAT_RGB_1555;//BMP_PIXEL_FORMAT_RGB_888;
+			hzk_bitmap_create(hz, HZK_FONT_16, 0xff, 0x00, 0, &info);
+
+			Handle = 0;
+			stBitmap.enPixelFormat = PIXEL_FORMAT_RGB_1555;
+			stBitmap.u32Width = info.width;
+			stBitmap.u32Height = info.height;
+			stBitmap.pData = info.pRGB;
+			
+			s32Ret = HI_MPI_RGN_SetBitMap(Handle,&stBitmap);
+			if (HI_SUCCESS != s32Ret)
+			{
+				printf("HI_MPI_RGN_SetBitMap error:%d\n",s32Ret);
+			}
+			
+			hzk_bitmap_destory(info);
+			///////////////////////////////////////////////////////////////////////
+			
+			strcpy(t_str, h0);
+		}
+
+		usleep(50*1000);
+	}
+	return HI_NULL;
+}
+
+HI_S32 SAMPLE_RGN_CreateOverlayForVenc(RGN_HANDLE Handle, HI_U32 u32Num)
+{
+    HI_S32 s32Ret;
+    MPP_CHN_S stChn;
+    RGN_ATTR_S stRgnAttr;
+    RGN_CHN_ATTR_S stChnAttr;
+    
+    /* Add cover to vpss group */
+    stChn.enModId  = HI_ID_VENC;
+    stChn.s32DevId = 0;
+    stChn.s32ChnId = 0;
+        
+    stRgnAttr.enType = OVERLAY_RGN;
+    stRgnAttr.unAttr.stOverlay.enPixelFmt       = PIXEL_FORMAT_RGB_1555;
+    stRgnAttr.unAttr.stOverlay.stSize.u32Width  = 400;//300
+    stRgnAttr.unAttr.stOverlay.stSize.u32Height = 300;
+    stRgnAttr.unAttr.stOverlay.u32BgColor       = 0x000003e0;
+
+    
+    s32Ret = HI_MPI_RGN_Create(u32Num, &stRgnAttr);
+    if(s32Ret != HI_SUCCESS)
+    {
+        printf("HI_MPI_RGN_Create failed! s32Ret: 0x%x.\n", s32Ret);
+        return s32Ret;
+    }
+
+    stChnAttr.bShow  = HI_TRUE;
+    stChnAttr.enType = OVERLAY_RGN;
+    stChnAttr.unChnAttr.stOverlayChn.stPoint.s32X = 48;
+    stChnAttr.unChnAttr.stOverlayChn.stPoint.s32Y = 48;
+    stChnAttr.unChnAttr.stOverlayChn.u32BgAlpha   = 0;//128;
+    stChnAttr.unChnAttr.stOverlayChn.u32FgAlpha   = 128;
+    stChnAttr.unChnAttr.stOverlayChn.u32Layer     = u32Num;
+    
+    stChnAttr.unChnAttr.stOverlayChn.stQpInfo.bAbsQp = HI_FALSE;
+    stChnAttr.unChnAttr.stOverlayChn.stQpInfo.s32Qp  = 0;
+    stChnAttr.unChnAttr.stOverlayChn.stQpInfo.bQpDisable  = HI_FALSE;
+
+    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.stInvColArea.u32Height = 16*(u32Num%2+1);
+    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.stInvColArea.u32Width  = 16*(u32Num%2+1);
+    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.u32LumThresh = 128;
+    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.enChgMod     = LESSTHAN_LUM_THRESH;
+    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.bInvColEn    = HI_FALSE;
+    
+    s32Ret = HI_MPI_RGN_AttachToChn(0, &stChn, &stChnAttr);
+    if(s32Ret != HI_SUCCESS)
+    {
+		printf("HI_MPI_RGN_AttachToChn error:%d\n",s32Ret);
+    }
+
+    return HI_SUCCESS;
+    
+}
 
 /******************************************************************************
 * function : show usage
@@ -87,6 +240,20 @@ void SAMPLE_VENC_StreamHandleSig(HI_S32 signo)
     exit(0);
 }
 
+HI_S32 SAMPLE_RGN_DestroyRegion(RGN_HANDLE Handle, HI_U32 u32Num)
+{
+    HI_S32 s32Ret;    
+        
+    s32Ret = HI_MPI_RGN_Destroy(u32Num);
+    if (HI_SUCCESS != s32Ret)
+    {
+        printf("HI_MPI_RGN_Destroy failed! s32Ret: 0x%x.\n", s32Ret);
+        return s32Ret;
+    }
+
+    return HI_SUCCESS;
+    
+}
 
 /******************************************************************************
 * function :  H.264@1080p@30fps+H.264@VGA@30fps
@@ -134,7 +301,7 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
     {
         enSize[1] = PIC_VGA;			
 		enSize[2] = PIC_QVGA;
-		s32ChnNum = 3;
+		s32ChnNum = 1;
     }
     else
     {
@@ -180,6 +347,11 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
         SAMPLE_PRT("system init failed with %d!\n", s32Ret);
         goto END_VENC_1080P_CLASSIC_0;
     }
+
+	/******************************************
+     step 2.1: 
+    ******************************************/
+    SAMPLE_RGN_CreateOverlayForVenc(0, 0);
 
     /******************************************
      step 3: start vi dev & chn to capture
@@ -388,16 +560,19 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
 	        goto END_VENC_1080P_CLASSIC_5;
 	    }
 	}
+
+	pthread_t g_stOsdUpdateThread = 0;
+	pthread_create(&g_stOsdUpdateThread, NULL, SAMPLE_RGN_UpdateBitmap, NULL);
     /******************************************
      step 6: stream venc process -- get stream, then save it to file. 
     ******************************************/
-    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum);
+    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum, COMM_VENC_UseStream);
     if (HI_SUCCESS != s32Ret)
     {
         SAMPLE_PRT("Start Venc failed!\n");
         goto END_VENC_1080P_CLASSIC_5;
     }
-
+	
     printf("please press twice ENTER to exit this sample\n");
     getchar();
     getchar();
@@ -406,7 +581,12 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
      step 7: exit process
     ******************************************/
     SAMPLE_COMM_VENC_StopGetStream();
-    
+
+	if(g_stOsdUpdateThread)
+	{
+		pthread_join(g_stOsdUpdateThread, NULL);
+	}
+	
 END_VENC_1080P_CLASSIC_5:
 	
     VpssGrp = 0;
@@ -457,6 +637,8 @@ END_VENC_1080P_CLASSIC_2:    //vpss stop
 END_VENC_1080P_CLASSIC_1:	//vi stop
     SAMPLE_COMM_VI_StopVi(&stViConfig);
 END_VENC_1080P_CLASSIC_0:	//system exit
+
+	SAMPLE_RGN_DestroyRegion(0, 0);
     SAMPLE_COMM_SYS_Exit();
     
     return s32Ret;    
@@ -645,7 +827,7 @@ HI_S32 SAMPLE_VENC_1080P_MJPEG_JPEG(HI_VOID)
     /******************************************
      step 6: stream venc process -- get stream, then save it to file. 
     ******************************************/
-    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum);
+    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum, COMM_VENC_UseStream);
     if (HI_SUCCESS != s32Ret)
     {
         SAMPLE_PRT("Start Venc failed!\n");
@@ -978,7 +1160,7 @@ HI_S32 SAMPLE_VENC_LOW_DELAY(HI_VOID)
     /******************************************
      step 6: stream venc process -- get stream, then save it to file. 
     ******************************************/
-    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum);
+    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum, COMM_VENC_UseStream);
     if (HI_SUCCESS != s32Ret)
     {
         SAMPLE_PRT("Start Venc failed!\n");
@@ -1250,7 +1432,7 @@ HI_S32 SAMPLE_VENC_ROIBG_CLASSIC(HI_VOID)
     /******************************************
      step 6: stream venc process -- get stream, then save it to file. 
     ******************************************/
-    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum);
+    s32Ret = SAMPLE_COMM_VENC_StartGetStream(s32ChnNum, COMM_VENC_UseStream);
     if (HI_SUCCESS != s32Ret)
     {
         SAMPLE_PRT("Start Venc failed!\n");
