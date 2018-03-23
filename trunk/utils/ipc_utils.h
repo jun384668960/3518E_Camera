@@ -7,11 +7,11 @@
 #define PASS_THROUGH	0
 
 #define MAX_CLNT_LEN 	20
-#define MAX_MSG_LEN 	1024
+#define MAX_MSG_LEN 	512
 
 typedef struct _ipc_st
 {
-	int  type;
+	long  type;
 	int  form;
 	int  to;
 	char body[MAX_MSG_LEN];

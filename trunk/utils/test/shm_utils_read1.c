@@ -26,13 +26,25 @@ static int on_conn_recv(struct ipc_clnt_handle_s* clnt, ipc_st data)
 {
 	LOGD_print("data.type:%d data.form:%d, data.to:%d", data.type, data.form, data.to);
 	shm_node_s node;
-	memcpy(&node, data.body, sizeof(data));
+	memcpy(&node, data.body, sizeof(shm_node_s));
 
-	char str[1024] = {0};
+//	char frame[150*1024] = {0};
 	if(g_handle != NULL)
 	{
-		ipc_shm_read(g_handle, str, node.length, node.offset);
-		LOGD_print("offset:%d length:%d str:%s", node.offset, node.length, str);
+		char* frame = NULL;
+		LOGD_print("offset:%d length:%d", node.offset, node.length);
+		int ret = ipc_shm_read(g_handle, &frame, node.length, node.offset);
+		if(ret == 0)
+		{
+			static FILE* h264 = NULL;
+			if(h264 == NULL)
+				h264 = fopen("./read_stream0.h264", "wb");
+			if(h264 != NULL)
+			{
+				fwrite(frame, node.length, 1, h264);
+				fflush(h264);
+			}
+		}
 	}
 	
 	return 0;
@@ -40,12 +52,16 @@ static int on_conn_recv(struct ipc_clnt_handle_s* clnt, ipc_st data)
 
 int main(int argc, char* argv[])
 {
-	log_ctrl* log = log_ctrl_create("shm_utils_read1.log", LOG_DEBUG, 1);
+	log_ctrl* log = log_ctrl_create("./shm_utils_read1.log", LOG_DEBUG, 1);
 	
 	g_handle = ipc_shm_open(SHM_KEY, SHM_DEFAULT_SIZE, 0);
-	ipc_clnt_handle* clnt = ipc_clnt_create(MSG_RECV2, on_conn_recv);
+	ipc_clnt_handle* clnt = ipc_clnt_create(MSG_RECV1, on_conn_recv);
 	if(clnt == NULL)
+	{
+		LOGE_print("ipc_clnt_create error");
 		return -1;
+	}
+		
 
 	int ret = ipc_clnt_login(clnt, MSG_SERVER);
 	if(ret != 0)
@@ -53,12 +69,15 @@ int main(int argc, char* argv[])
 		LOGD_print("ipc_clnt_login error");
 		return -1;
 	}
-	
+
+	LOGD_print("ipc_clnt_login OK");
 	int count = 0;
 	while(1)
 	{
 		usleep(2*1000*1000);
+		continue;
 	}
+	LOGD_print("end");
 
 	ipc_clnt_logout(clnt);
 	ipc_clnt_destory(clnt);
@@ -67,5 +86,4 @@ int main(int argc, char* argv[])
 	
 	return 0;
 }
-
 

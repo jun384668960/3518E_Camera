@@ -15,7 +15,7 @@ ipc_shm_handle* ipc_shm_open(int key, int size, int flg)
     }  
 
     char* shmaddr = (char*)shmat(shmid, NULL, 0);
-	if((int)shmaddr == -1)
+	if(shmaddr == (char*)-1)
 	{
 		fprintf(stderr, "shmat shmid:%d failed\n", shmid);  
 		return NULL;
@@ -67,24 +67,28 @@ int ipc_shm_write(ipc_shm_handle* handle, char* data, int length)
 	{
 		memcpy(handle->base, data, length);
 		handle->offset = length;
+		handle->last_offset = 0;
 	}
 	else
 	{
 		memcpy(handle->base + handle->offset, data, length);
+		handle->last_offset = handle->offset;
 		handle->offset += length;
 	}
 
 	return 0;
 }
 
-int ipc_shm_read(ipc_shm_handle* handle, char* data, int lenght, int offset)
+int ipc_shm_read(ipc_shm_handle* handle, char** data, int lenght, int offset)
 {
-	if(handle == NULL || handle->base == NULL || data == NULL)
+	if(handle == NULL || handle->base == NULL/* || data == NULL*/)
 		return -1;
 	if(offset+lenght > handle->size)
 		return -2;
 
-	memcpy(data, handle->base + offset, lenght);
+	printf("%p\n", handle->base);
+	*data = handle->base + offset;
+//	memcpy(data, handle->base + offset, lenght);
 	
 	return 0;
 }

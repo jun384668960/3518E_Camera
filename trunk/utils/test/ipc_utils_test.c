@@ -20,10 +20,10 @@ static int on_conn_recv(ipc_srv_handle* srv, ipc_st msg)
 	case -1:
 		ipc_srv_clnt_logout(srv,atoi(msg.body),1);
 		break;
-	case 0:
+	case 1:
 		ipc_srv_clnt_login(srv,atoi(msg.body));
 		break;
-	case 1:
+	case 2:
 		if(msg.to == BROADCAST)
 		{
 			for(i; i < MAX_CLNT_LEN; i++)
@@ -31,9 +31,9 @@ static int on_conn_recv(ipc_srv_handle* srv, ipc_st msg)
 				if(srv->clnt_info[i].key != 0 && srv->clnt_info[i].key != msg.form)
 				{
 					//向队列发送数据
-					if(ipc_srv_send(srv, srv->clnt_info[i].id, (void*)&msg, sizeof(ipc_st), PASS_THROUGH) == -1)
+					if(ipc_srv_send(srv, srv->clnt_info[i].id, (void*)&msg, sizeof(ipc_st)-sizeof(long), PASS_THROUGH) == -1)
 					{
-						LOGE_print("msgsnd failed %d", errno);
+						LOGE_print("msgsnd failed %d %s", errno, strerror(errno));
 						ipc_srv_clnt_logout(srv, srv->clnt_info[i].key, 1);
 						return -1;
 					}
@@ -46,9 +46,9 @@ static int on_conn_recv(ipc_srv_handle* srv, ipc_st msg)
 			{
 				if(srv->clnt_info[i].key == msg.to)
 				{
-					if(ipc_srv_send(srv, srv->clnt_info[i].id, (void*)&msg, sizeof(ipc_st), PASS_THROUGH) == -1)
+					if(ipc_srv_send(srv, srv->clnt_info[i].id, (void*)&msg, sizeof(ipc_st)-sizeof(long), PASS_THROUGH) == -1)
 					{
-						LOGE_print("msgsnd failed %d", errno);
+						LOGE_print("msgsnd failed %d %s", errno, strerror(errno));
 						ipc_srv_clnt_logout(srv, srv->clnt_info[i].key, 1);
 						return -1;
 					}
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 	int ret = 0;
 	ipc_st msg;
 
-	log_ctrl* log = log_ctrl_create("rpc_utils_test.log", LOG_TRACE, 1);
+	log_ctrl* log = log_ctrl_create("./rpc_utils_test.log", LOG_TRACE, 1);
 
 	ipc_srv_handle* srv = ipc_srv_create(MSG_SERVER, on_conn_recv);
 

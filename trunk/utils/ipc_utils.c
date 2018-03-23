@@ -13,7 +13,10 @@ static void* ipc_srv_recv_thread(void* param);
 ipc_srv_handle* ipc_srv_create(int key, int (*on_conn_recv)(struct ipc_srv_handle_s* srv, ipc_st data))
 {
 	int msgid = -1;
-	int i = 0;
+
+	char cmd[64] = {0};
+	sprintf(cmd, "ipcrm -Q %d", key);
+	system(cmd);
 	
 	msgid = msgget((key_t)key, 0666 | IPC_CREAT);
 	if(msgid == -1)
@@ -23,6 +26,7 @@ ipc_srv_handle* ipc_srv_create(int key, int (*on_conn_recv)(struct ipc_srv_handl
 	}
 
 	LOGI_print("key:%d, id:%d", key, msgid);
+	
 	ipc_srv_handle* handle = (ipc_srv_handle*)malloc(sizeof(ipc_srv_handle));
 
 	handle->key = key;
@@ -46,7 +50,7 @@ void ipc_srv_destory(ipc_srv_handle* srv)
 {
 	if(srv->tid != 0)
 	{
-		srv->tid_stop == 1;
+		srv->tid_stop = 1;
 		pthread_join(srv->tid, NULL);
 		srv->tid = 0;
 	}
@@ -64,9 +68,11 @@ void* ipc_srv_recv_thread(void* param)
 	while(srv->tid_stop != 1)
 	{
 		ipc_st msg;
-		if(msgrcv(srv->id, (void*)&msg, sizeof(ipc_st), 0, 0) == -1)
+		memset(&msg, 0x00, sizeof(ipc_st)) ;
+		int recvlength = sizeof(ipc_st) - sizeof(long) ;
+		if(msgrcv(srv->id, (void*)&msg, recvlength, 0, 0) == -1)
 		{
-			LOGE_print("msgrcv failed with errno: %d", errno);
+			LOGE_print("msgrcv failed with errno: %d %s", errno, strerror(errno));
 			continue;
 		}
 
@@ -88,7 +94,11 @@ void* ipc_srv_recv_thread(void* param)
 int ipc_srv_clnt_login(ipc_srv_handle* srv, int clnt_key)
 {
 	LOGI_print("clnt_key:%d", clnt_key);
-	int i = 0;
+
+//	char cmd[64] = {0};
+//	sprintf(cmd, "ipcrm -Q %d",clnt_key);
+//	system(cmd);
+	
 	if(srv->clnt_count >= MAX_CLNT_LEN)
 	{
 		LOGE_print("rpc_clnt_register error, full...");
@@ -104,9 +114,10 @@ int ipc_srv_clnt_login(ipc_srv_handle* srv, int clnt_key)
 	}
 	
 	//查找空位
-	for(i; i < MAX_CLNT_LEN; i++)
+	int i;
+	for(i=0; i < MAX_CLNT_LEN; i++)
 	{
-		if(srv->clnt_info[i].id == 0 || srv->clnt_info[i].id == msgid)
+		if(srv->clnt_info[i].id == 0 || srv->clnt_info[i].key == clnt_key)
 		{
 			break;
 		}
@@ -122,8 +133,7 @@ int ipc_srv_clnt_login(ipc_srv_handle* srv, int clnt_key)
 	srv->clnt_info[i].key = clnt_key;
 	srv->clnt_count++;
 
-	i = 0;
-	for(i; i < MAX_CLNT_LEN; i++)
+	for(i=0; i < MAX_CLNT_LEN; i++)
 	{
 		fprintf(stderr, "%d ",srv->clnt_info[i].id);
 	}
@@ -135,10 +145,10 @@ int ipc_srv_clnt_login(ipc_srv_handle* srv, int clnt_key)
 int ipc_srv_clnt_logout(ipc_srv_handle* srv, int clnt_key, int del)
 {
 	int msgid = 0;
-	int i = 0;
+	int i;
 
 	//查找空位
-	for(i; i < MAX_CLNT_LEN; i++)
+	for(i=0; i < MAX_CLNT_LEN; i++)
 	{
 		if(srv->clnt_info[i].key == clnt_key)
 		{
@@ -160,8 +170,7 @@ int ipc_srv_clnt_logout(ipc_srv_handle* srv, int clnt_key, int del)
 		}
 	}
 
-	i = 0;
-	for(i; i < MAX_CLNT_LEN; i++)
+	for(i=0; i < MAX_CLNT_LEN; i++)
 	{
 		fprintf(stderr, "%d ",srv->clnt_info[i].id);
 	}
@@ -177,7 +186,7 @@ int ipc_srv_send(ipc_srv_handle* srv, int to_id, char* data, int length, int typ
 	//向队列发送数据
 	if(type == PASS_THROUGH)
 	{
-		if(msgsnd(to_id, (void*)data, length, IPC_NOWAIT) == -1)
+		if(msgsnd(to_id, (void*)data, length, 0/*IPC_NOWAIT*/) == -1)
 		{
 			LOGE_print("msgsnd failed %d", errno);
 			return -1;
@@ -196,6 +205,10 @@ static void* ipc_clnt_recv_thread(void* param);
 ipc_clnt_handle* ipc_clnt_create(int key, int (*on_conn_recv)(struct ipc_clnt_handle_s* clnt, ipc_st data))
 {
 	int clntid = -1;
+
+	char cmd[64] = {0};
+	sprintf(cmd, "ipcrm -Q %d", key);
+	system(cmd);
 	
 	clntid = msgget((key_t)key, 0666 | IPC_CREAT);
 	if(clntid == -1)
@@ -204,17 +217,18 @@ ipc_clnt_handle* ipc_clnt_create(int key, int (*on_conn_recv)(struct ipc_clnt_ha
 		return NULL;
 	}
 	LOGI_print("msgget clnt_key:%d clntid:%d", key, clntid);
-
+	
 	ipc_clnt_handle* handle = (ipc_clnt_handle*)malloc(sizeof(ipc_clnt_handle));
+	memset(handle, 0x0, sizeof(ipc_clnt_handle));
 	
 	handle->key = key;
 	handle->id  = clntid;
 	handle->on_conn_recv = on_conn_recv;
 
 	handle->tid_stop = 0;
-	if(pthread_create(&handle->tid, NULL, ipc_clnt_recv_thread, handle) != 0)
+	if(pthread_create(&handle->tid, NULL, ipc_clnt_recv_thread, (void*)handle) != 0)
 	{
-		LOGE_print("pthread_create ipc_srv_thread_forwarding error:%s", strerror(errno));
+		LOGE_print("pthread_create ipc_clnt_recv_thread error:%s", strerror(errno));
 		ipc_clnt_destory(handle);
 		return NULL;
 	}
@@ -226,7 +240,7 @@ void ipc_clnt_destory(ipc_clnt_handle* clnt)
 {
 	if(clnt->tid != 0)
 	{
-		clnt->tid_stop == 1;
+		clnt->tid_stop = 1;
 		pthread_join(clnt->tid, NULL);
 		clnt->tid = 0;
 	}
@@ -243,18 +257,19 @@ void* ipc_clnt_recv_thread(void* param)
 	while(handle->tid_stop != 1)
 	{
 		ipc_st data;
-		if(msgrcv(handle->id, (void*)&data, sizeof(ipc_st), 0, 0) == -1)
+		if(msgrcv(handle->id, (void*)&data, sizeof(ipc_st) - sizeof(long), 0, 0) == -1)
 		{
-			LOGE_print("msgrcv failed with errno: %d", errno);
+			LOGE_print("msgrcv failed with errno: %d %s", errno, strerror(errno));
 			continue;
 		}
 
-//		LOGD_print("msgrcv data data.body:%s data.type:%d data.from:%d data.to:%d", data.body, data.type, data.form, data.to);
+		LOGD_print("msgrcv data data.body:%p data.type:%d data.from:%d data.to:%d", data.body, data.type, data.form, data.to);
 
 		if(handle->on_conn_recv != NULL)
 		{
-			(*handle->on_conn_recv)(handle, data);
+			(handle->on_conn_recv)(handle, data);
 		}
+		LOGD_print("%p %d", handle, handle->tid_stop);
 	}
 	
 	return NULL;
@@ -273,17 +288,17 @@ int ipc_clnt_login(ipc_clnt_handle* clnt, int srv_key)
 	LOGI_print("msgget svc_key:%d svcid:%d\n", srv_key, srvid);
 
 	ipc_st msg;
-	msg.type = 0;
+	msg.type = 1;
 	msg.form = clnt->key;
 	msg.to = srv_key;
 	
-	char str[25];
+	char str[25] = {0};
     sprintf(str, "%d", clnt->key);
 	
-	memcpy(msg.body, str, sizeof(str));
-	if(msgsnd(srvid, (void*)&msg, sizeof(ipc_st), IPC_NOWAIT) == -1)
+	memcpy(msg.body, str, strlen(str));
+	if(msgsnd(srvid, (void*)&msg, sizeof(ipc_st)-sizeof(long), IPC_NOWAIT) == -1)
 	{
-		LOGE_print("msgsnd failed %d", errno);
+		LOGE_print("msgsnd failed %d %s", errno, strerror(errno));
 		return -1;
 	}
 
@@ -304,7 +319,7 @@ int ipc_clnt_logout(ipc_clnt_handle* clnt)
     sprintf(str, "%d", clnt->key);
 	
 	memcpy(msg.body, str, sizeof(str));
-	if(msgsnd(clnt->srv_id, (void*)&msg, sizeof(ipc_st), IPC_NOWAIT) == -1)
+	if(msgsnd(clnt->srv_id, (void*)&msg, sizeof(ipc_st)-sizeof(long), IPC_NOWAIT) == -1)
 	{
 		LOGE_print("msgsnd failed %d", errno);
 		return -1;
@@ -324,9 +339,9 @@ int ipc_clnt_send(ipc_clnt_handle* clnt, char* data, int length, int type, int t
 	msg.to = to;
 	memcpy(msg.body, data, length);
 	
-	if(msgsnd(clnt->srv_id, (void*)&msg, sizeof(ipc_st), IPC_NOWAIT) == -1)
+	if(msgsnd(clnt->srv_id, (void*)&msg, sizeof(ipc_st)-sizeof(long), 0/*IPC_NOWAIT*/) == -1)
 	{
-		LOGE_print("msgsnd failed %d", errno);
+		LOGE_print("msgsnd failed %d %s", errno, strerror(errno));
 		return -1;
 	}
 

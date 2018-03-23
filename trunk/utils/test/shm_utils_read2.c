@@ -28,10 +28,12 @@ static int on_conn_recv(struct ipc_clnt_handle_s* clnt, ipc_st data)
 	shm_node_s node;
 	memcpy(&node, data.body, sizeof(data));
 
+	char* tmp = NULL;
 	char str[1024] = {0};
 	if(g_handle != NULL)
 	{
-		ipc_shm_read(g_handle, str, node.length, node.offset);
+		ipc_shm_read(g_handle, &tmp, node.length, node.offset);
+		strncpy(str, tmp, node.length);
 		LOGD_print("offset:%d length:%d str:%s", node.offset, node.length, str);
 	}
 	
@@ -43,7 +45,7 @@ int main(int argc, char* argv[])
 	log_ctrl* log = log_ctrl_create("shm_utils_read1.log", LOG_DEBUG, 1);
 	
 	g_handle = ipc_shm_open(SHM_KEY, SHM_DEFAULT_SIZE, 0);
-	ipc_clnt_handle* clnt = ipc_clnt_create(MSG_RECV1, on_conn_recv);
+	ipc_clnt_handle* clnt = ipc_clnt_create(MSG_RECV2, on_conn_recv);
 	if(clnt == NULL)
 		return -1;
 
@@ -67,4 +69,5 @@ int main(int argc, char* argv[])
 	
 	return 0;
 }
+
 
