@@ -96,8 +96,12 @@ SENSOR_LIBS += $(REL_LIB)/lib_iniparser.a
 #########################################################################
 
 COMMON_DIR:=$(PWD)/../common
+UTILS_DIR:=$(PWD)/../utils
+PROCOM_DIR:=$(PWD)/../../../utils
 
 INC_FLAGS := -I$(COMMON_DIR)
+INC_FLAGS += -I$(UTILS_DIR)
+INC_FLAGS += -I$(PROCOM_DIR)
 INC_FLAGS += -I$(REL_INC)
 INC_FLAGS += -I$(SDK_PATH)/mpp/component/acodec
 
@@ -180,9 +184,11 @@ CFLAGS += $(LIBS_CFLAGS)
 CFLAGS += -DLCD_ILI9342
 
 COMM_SRC := $(wildcard $(COMMON_DIR)/*.c)
-
+UTILS_SRC := $(wildcard $(UTILS_DIR)/*.c)
+PROCOM_SRC := $(wildcard $(PROCOM_DIR)/*.c)
 #DEL_SRC  := $(COMMON_DIR)/sample_comm_audio.c
 #COMM_SRC := $(filter-out $(DEL_SRC), $(COMM_SRC))
 
 COMM_OBJ := $(COMM_SRC:%.c=%.o)
-
+COMM_OBJ += $(UTILS_SRC:%.c=%.o)
+COMM_OBJ += $(PROCOM_SRC:%.c=%.o)
