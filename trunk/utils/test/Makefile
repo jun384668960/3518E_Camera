@@ -1,6 +1,9 @@
-CC := gcc
+#CROSS := rm-hisiv300-linux-
+CC := $(CROSS)gcc
 CFLAG := -lpthread -I../
-BINS := stream_write stream_read1 stream_read2 ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
+BINS := unix_socket_svr unix_socket_clnt
+#unix_socket_server unix_socket_client 
+#stream_write stream_read1 stream_read2 ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
 #ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
 SRCS := $(wildcard ../*.c)
 OBJS := $(wildcard ../*.o ./*.o)
@@ -33,6 +36,18 @@ stream_read1:
 
 stream_read2:
 	$(CC) stream_read2.c $(SRCS) -o stream_read2 $(CFLAG)
+
+unix_socket_server:
+	$(CC) unix_socket_server.c $(SRCS) -o unix_socket_server $(CFLAG)
+
+unix_socket_client:
+	$(CC) unix_socket_client.c $(SRCS) -o unix_socket_client $(CFLAG)
+
+unix_socket_svr:
+	$(CC) unix_socket_svr.c $(SRCS) -o unix_socket_svr $(CFLAG)
+
+unix_socket_clnt:
+	$(CC) unix_socket_clnt.c $(SRCS) -o unix_socket_clnt $(CFLAG)
 	
 clean:
 	@rm -rf $(BINS)
