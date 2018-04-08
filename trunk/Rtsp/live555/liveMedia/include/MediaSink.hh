@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2018 Live Networks, Inc.  All rights reserved.
 // Media Sinks
 // C++ header
 
@@ -25,111 +25,111 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "FramedSource.hh"
 #endif
 
-class MediaSink : public Medium {
+class MediaSink: public Medium {
 public:
-	static Boolean lookupByName(UsageEnvironment& env, char const* sinkName,
-		MediaSink*& resultSink);
+  static Boolean lookupByName(UsageEnvironment& env, char const* sinkName,
+			      MediaSink*& resultSink);
 
-	typedef void (afterPlayingFunc)(void* clientData);
-	Boolean startPlaying(MediaSource& source,
-		afterPlayingFunc* afterFunc,
-		void* afterClientData);
-	virtual void stopPlaying();
+  typedef void (afterPlayingFunc)(void* clientData);
+  Boolean startPlaying(MediaSource& source,
+		       afterPlayingFunc* afterFunc,
+		       void* afterClientData);
+  virtual void stopPlaying();
 
-	// Test for specific types of sink:
-	virtual Boolean isRTPSink() const;
+  // Test for specific types of sink:
+  virtual Boolean isRTPSink() const;
 
-	FramedSource* source() const { return fSource; }
+  FramedSource* source() const {return fSource;}
 
 protected:
-	MediaSink(UsageEnvironment& env); // abstract base class
-	virtual ~MediaSink();
+  MediaSink(UsageEnvironment& env); // abstract base class
+  virtual ~MediaSink();
 
-	virtual Boolean sourceIsCompatibleWithUs(MediaSource& source);
-	// called by startPlaying()
-	virtual Boolean continuePlaying() = 0;
-	// called by startPlaying()
+  virtual Boolean sourceIsCompatibleWithUs(MediaSource& source);
+      // called by startPlaying()
+  virtual Boolean continuePlaying() = 0;
+      // called by startPlaying()
 
-	static void onSourceClosure(void* clientData); // can be used in "getNextFrame()" calls
-	void onSourceClosure();
-	// should be called (on ourselves) by continuePlaying() when it
-	// discovers that the source we're playing from has closed.
+  static void onSourceClosure(void* clientData); // can be used in "getNextFrame()" calls
+  void onSourceClosure();
+      // should be called (on ourselves) by continuePlaying() when it
+      // discovers that the source we're playing from has closed.
 
-	FramedSource* fSource;
-
-private:
-	// redefined virtual functions:
-	virtual Boolean isSink() const;
+  FramedSource* fSource;
 
 private:
-	// The following fields are used when we're being played:
-	afterPlayingFunc* fAfterFunc;
-	void* fAfterClientData;
+  // redefined virtual functions:
+  virtual Boolean isSink() const;
+
+private:
+  // The following fields are used when we're being played:
+  afterPlayingFunc* fAfterFunc;
+  void* fAfterClientData;
 };
 
 // A data structure that a sink may use for an output packet:
 class OutPacketBuffer {
 public:
-	OutPacketBuffer(unsigned preferredPacketSize, unsigned maxPacketSize,
-		unsigned maxBufferSize = 0);
-	// if "maxBufferSize" is >0, use it - instead of "maxSize" to compute the buffer size
-	~OutPacketBuffer();
+  OutPacketBuffer(unsigned preferredPacketSize, unsigned maxPacketSize,
+		  unsigned maxBufferSize = 0);
+      // if "maxBufferSize" is >0, use it - instead of "maxSize" to compute the buffer size
+  ~OutPacketBuffer();
 
-	static unsigned maxSize;
-	static void increaseMaxSizeTo(unsigned newMaxSize) { if (newMaxSize > OutPacketBuffer::maxSize) OutPacketBuffer::maxSize = newMaxSize; }
+  static unsigned maxSize;
+  static void increaseMaxSizeTo(unsigned newMaxSize) { if (newMaxSize > OutPacketBuffer::maxSize) OutPacketBuffer::maxSize = newMaxSize; }
 
-	unsigned char* curPtr() const { return &fBuf[fPacketStart + fCurOffset]; }
-	unsigned totalBytesAvailable() const {
-		return fLimit - (fPacketStart + fCurOffset);
-	}
-	unsigned totalBufferSize() const { return fLimit; }
-	unsigned char* packet() const { return &fBuf[fPacketStart]; }
-	unsigned curPacketSize() const { return fCurOffset; }
+  unsigned char* curPtr() const {return &fBuf[fPacketStart + fCurOffset];}
+  unsigned totalBytesAvailable() const {
+    return fLimit - (fPacketStart + fCurOffset);
+  }
+  unsigned totalBufferSize() const { return fLimit; }
+  unsigned char* packet() const {return &fBuf[fPacketStart];}
+  unsigned curPacketSize() const {return fCurOffset;}
 
-	void increment(unsigned numBytes) { fCurOffset += numBytes; }
+  void increment(unsigned numBytes) {fCurOffset += numBytes;}
 
-	void enqueue(unsigned char const* from, unsigned numBytes);
-	void enqueueWord(u_int32_t word);
-	void insert(unsigned char const* from, unsigned numBytes, unsigned toPosition);
-	void insertWord(u_int32_t word, unsigned toPosition);
-	void extract(unsigned char* to, unsigned numBytes, unsigned fromPosition);
-	u_int32_t extractWord(unsigned fromPosition);
+  void enqueue(unsigned char const* from, unsigned numBytes);
+  void enqueueWord(u_int32_t word);
+  void insert(unsigned char const* from, unsigned numBytes, unsigned toPosition);
+  void insertWord(u_int32_t word, unsigned toPosition);
+  void extract(unsigned char* to, unsigned numBytes, unsigned fromPosition);
+  u_int32_t extractWord(unsigned fromPosition);
 
-	void skipBytes(unsigned numBytes);
+  void skipBytes(unsigned numBytes);
 
-	Boolean isPreferredSize() const { return fCurOffset >= fPreferred; }
-	Boolean wouldOverflow(unsigned numBytes) const {
-		return (fCurOffset + numBytes) > fMax;
-	}
-	unsigned numOverflowBytes(unsigned numBytes) const {
-		return (fCurOffset + numBytes) - fMax;
-	}
-	Boolean isTooBigForAPacket(unsigned numBytes) const {
-		return numBytes > fMax;
-	}
+  Boolean isPreferredSize() const {return fCurOffset >= fPreferred;}
+  Boolean wouldOverflow(unsigned numBytes) const {
+    return (fCurOffset+numBytes) > fMax;
+  }
+  unsigned numOverflowBytes(unsigned numBytes) const {
+    return (fCurOffset+numBytes) - fMax;
+  }
+  Boolean isTooBigForAPacket(unsigned numBytes) const {
+    return numBytes > fMax;
+  }
 
-	void setOverflowData(unsigned overflowDataOffset,
-		unsigned overflowDataSize,
-	struct timeval const& presentationTime,
-		unsigned durationInMicroseconds);
-	unsigned overflowDataSize() const { return fOverflowDataSize; }
-	struct timeval overflowPresentationTime() const { return fOverflowPresentationTime; }
-	unsigned overflowDurationInMicroseconds() const { return fOverflowDurationInMicroseconds; }
-	Boolean haveOverflowData() const { return fOverflowDataSize > 0; }
-	void useOverflowData();
+  void setOverflowData(unsigned overflowDataOffset,
+		       unsigned overflowDataSize,
+		       struct timeval const& presentationTime,
+		       unsigned durationInMicroseconds);
+  unsigned overflowDataSize() const {return fOverflowDataSize;}
+  struct timeval overflowPresentationTime() const {return fOverflowPresentationTime;}
+  unsigned overflowDurationInMicroseconds() const {return fOverflowDurationInMicroseconds;}
+  Boolean haveOverflowData() const {return fOverflowDataSize > 0;}
+  void useOverflowData();
 
-	void adjustPacketStart(unsigned numBytes);
-	void resetPacketStart();
-	void resetOffset() { fCurOffset = 0; }
-	void resetOverflowData() { fOverflowDataOffset = fOverflowDataSize = 0; }
+  void adjustPacketStart(unsigned numBytes);
+  void resetPacketStart();
+  void resetOffset() { fCurOffset = 0; }
+  void resetOverflowData() { fOverflowDataOffset = fOverflowDataSize = 0; }
 
 private:
-	unsigned fPacketStart, fCurOffset, fPreferred, fMax, fLimit;
-	unsigned char* fBuf;
+  unsigned fPacketStart, fCurOffset, fPreferred, fMax, fLimit;
+  unsigned char* fBuf;
 
-	unsigned fOverflowDataOffset, fOverflowDataSize;
-	struct timeval fOverflowPresentationTime;
-	unsigned fOverflowDurationInMicroseconds;
+  unsigned fOverflowDataOffset, fOverflowDataSize;
+  struct timeval fOverflowPresentationTime;
+  unsigned fOverflowDurationInMicroseconds;
 };
 
 #endif

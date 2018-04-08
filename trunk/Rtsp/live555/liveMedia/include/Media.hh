@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2018 Live Networks, Inc.  All rights reserved.
 // Medium
 // C++ header
 
@@ -49,40 +49,39 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 class Medium {
 public:
-	static Boolean lookupByName(UsageEnvironment& env,
-		char const* mediumName,
-		Medium*& resultMedium);
-	static void close(UsageEnvironment& env, char const* mediumName);
-	static void close(Medium* medium); // alternative close() method using ptrs
-	// (has no effect if medium == NULL)
+  static Boolean lookupByName(UsageEnvironment& env,
+			      char const* mediumName,
+			      Medium*& resultMedium);
+  static void close(UsageEnvironment& env, char const* mediumName);
+  static void close(Medium* medium); // alternative close() method using ptrs
+      // (has no effect if medium == NULL)
 
-	UsageEnvironment& envir() const { return fEnviron; }
+  UsageEnvironment& envir() const {return fEnviron;}
 
-	char const* name() const { return fMediumName; }
+  char const* name() const {return fMediumName;}
 
-	// Test for specific types of media:
-	virtual Boolean isSource() const;
-	virtual Boolean isSink() const;
-	virtual Boolean isRTCPInstance() const;
-	virtual Boolean isRTSPClient() const;
-	virtual Boolean isRTSPServer() const;
-	virtual Boolean isMediaSession() const;
-	virtual Boolean isServerMediaSession() const;
-	virtual Boolean isDarwinInjector() const;
+  // Test for specific types of media:
+  virtual Boolean isSource() const;
+  virtual Boolean isSink() const;
+  virtual Boolean isRTCPInstance() const;
+  virtual Boolean isRTSPClient() const;
+  virtual Boolean isRTSPServer() const;
+  virtual Boolean isMediaSession() const;
+  virtual Boolean isServerMediaSession() const;
 
 protected:
-	friend class MediaLookupTable;
-	Medium(UsageEnvironment& env); // abstract base class
-	virtual ~Medium(); // instances are deleted using close() only
+  friend class MediaLookupTable;
+  Medium(UsageEnvironment& env); // abstract base class
+  virtual ~Medium(); // instances are deleted using close() only
 
-	TaskToken& nextTask() {
-		return fNextTask;
-	}
+  TaskToken& nextTask() {
+	return fNextTask;
+  }
 
 private:
-	UsageEnvironment& fEnviron;
-	char fMediumName[mediumNameMaxLen];
-	TaskToken fNextTask;
+  UsageEnvironment& fEnviron;
+  char fMediumName[mediumNameMaxLen];
+  TaskToken fNextTask;
 };
 
 
@@ -91,48 +90,48 @@ private:
 //  the whole set of "Medium" objects that we've created.)
 class MediaLookupTable {
 public:
-	static MediaLookupTable* ourMedia(UsageEnvironment& env);
-	HashTable const& getTable() { return *fTable; }
+  static MediaLookupTable* ourMedia(UsageEnvironment& env);
+  HashTable const& getTable() { return *fTable; }
 
 protected:
-	MediaLookupTable(UsageEnvironment& env);
-	virtual ~MediaLookupTable();
+  MediaLookupTable(UsageEnvironment& env);
+  virtual ~MediaLookupTable();
 
 private:
-	friend class Medium;
+  friend class Medium;
 
-	Medium* lookup(char const* name) const;
-	// Returns NULL if none already exists
+  Medium* lookup(char const* name) const;
+  // Returns NULL if none already exists
 
-	void addNew(Medium* medium, char* mediumName);
-	void remove(char const* name);
+  void addNew(Medium* medium, char* mediumName);
+  void remove(char const* name);
 
-	void generateNewName(char* mediumName, unsigned maxLen);
+  void generateNewName(char* mediumName, unsigned maxLen);
 
 private:
-	UsageEnvironment& fEnv;
-	HashTable* fTable;
-	unsigned fNameGenerator;
+  UsageEnvironment& fEnv;
+  HashTable* fTable;
+  unsigned fNameGenerator;
 };
 
 
 // The structure pointed to by the "liveMediaPriv" UsageEnvironment field:
 class _Tables {
 public:
-	static _Tables* getOurTables(UsageEnvironment& env, Boolean createIfNotPresent = True);
-	// returns a pointer to an "ourTables" structure (creating it if necessary)
-	void reclaimIfPossible();
-	// used to delete ourselves when we're no longer used
+  static _Tables* getOurTables(UsageEnvironment& env, Boolean createIfNotPresent = True);
+      // returns a pointer to a "_Tables" structure (creating it if necessary)
+  void reclaimIfPossible();
+      // used to delete ourselves when we're no longer used
 
-	MediaLookupTable* mediaTable;
-	void* socketTable;
+  MediaLookupTable* mediaTable;
+  void* socketTable;
 
 protected:
-	_Tables(UsageEnvironment& env);
-	virtual ~_Tables();
+  _Tables(UsageEnvironment& env);
+  virtual ~_Tables();
 
 private:
-	UsageEnvironment& fEnv;
+  UsageEnvironment& fEnv;
 };
 
 #endif

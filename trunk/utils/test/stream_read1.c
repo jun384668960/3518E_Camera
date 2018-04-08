@@ -27,18 +27,24 @@ int main()
 		int ret = shm_stream_get(handle, &info, &data, &length);
 		if(ret != 0)
 		{
-			LOGE_print("shm_stream_get error");
+//			LOGE_print("shm_stream_get error");
 		}
 		else
 		{
-			strncpy(string, data, length);
-			LOGI_print("data=>string:%s length:%d", string, length);
-			LOGI_print("info=>length:%d pts:%d", info.length, info.pts);
+//			static FILE* h264 = NULL;
+//			if(h264 == NULL)
+//				h264 = fopen("./read1.264", "wb");
+//			if(h264 != NULL)
+//				fwrite(data, length, 1, h264);
+			
+//			strncpy(string, data, length);
+			LOGI_print("pts:%llu length:%d info=>length:%d", info.pts, length, info.length);
+			int cnt = shm_stream_remains(handle);
+			LOGI_print("shm_stream_remains cnt:%d", cnt);
 		}
-		int cnt = shm_stream_remains(handle);
-		LOGI_print("shm_stream_remains cnt:%d", cnt);
+
 		
-		usleep(1000*1000);
+		usleep(2*1000);
 	}
 	
 	shm_stream_destory(handle);

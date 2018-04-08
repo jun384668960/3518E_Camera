@@ -29,7 +29,7 @@ static void on_status(void* param, int fd, int status)
 
 int main()
 {
-	unix_socket_t* sock = unix_socket_create(UNIX_SOCKET_CLIENT, 1, "test", on_recv, on_status);
+	unix_socket_t* sock = unix_socket_create(UNIX_SOCKET_CLIENT, 1, "test", "clnt1", on_recv, on_status);
 
 	unix_socket_conn(sock, "test");
 	int count = 0;

@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2014, Live Networks, Inc.  All rights reserved
+ // Copyright (c) 1996-2018, Live Networks, Inc.  All rights reserved
 // Delay queue
 // C++ header
 
@@ -34,64 +34,64 @@ typedef long time_base_seconds;
 
 class Timeval {
 public:
-	time_base_seconds seconds() const {
-		return fTv.tv_sec;
-	}
-	time_base_seconds seconds() {
-		return fTv.tv_sec;
-	}
-	time_base_seconds useconds() const {
-		return fTv.tv_usec;
-	}
-	time_base_seconds useconds() {
-		return fTv.tv_usec;
-	}
+  time_base_seconds seconds() const {
+    return fTv.tv_sec;
+  }
+  time_base_seconds seconds() {
+    return fTv.tv_sec;
+  }
+  time_base_seconds useconds() const {
+    return fTv.tv_usec;
+  }
+  time_base_seconds useconds() {
+    return fTv.tv_usec;
+  }
 
-	int operator>=(Timeval const& arg2) const;
-	int operator<=(Timeval const& arg2) const {
-		return arg2 >= *this;
-	}
-	int operator<(Timeval const& arg2) const {
-		return !(*this >= arg2);
-	}
-	int operator>(Timeval const& arg2) const {
-		return arg2 < *this;
-	}
-	int operator==(Timeval const& arg2) const {
-		return *this >= arg2 && arg2 >= *this;
-	}
-	int operator!=(Timeval const& arg2) const {
-		return !(*this == arg2);
-	}
+  int operator>=(Timeval const& arg2) const;
+  int operator<=(Timeval const& arg2) const {
+    return arg2 >= *this;
+  }
+  int operator<(Timeval const& arg2) const {
+    return !(*this >= arg2);
+  }
+  int operator>(Timeval const& arg2) const {
+    return arg2 < *this;
+  }
+  int operator==(Timeval const& arg2) const {
+    return *this >= arg2 && arg2 >= *this;
+  }
+  int operator!=(Timeval const& arg2) const {
+    return !(*this == arg2);
+  }
 
-	void operator+=(class DelayInterval const& arg2);
-	void operator-=(class DelayInterval const& arg2);
-	// returns ZERO iff arg2 >= arg1
+  void operator+=(class DelayInterval const& arg2);
+  void operator-=(class DelayInterval const& arg2);
+  // returns ZERO iff arg2 >= arg1
 
 protected:
-	Timeval(time_base_seconds seconds, time_base_seconds useconds) {
-		fTv.tv_sec = seconds; fTv.tv_usec = useconds;
-	}
+  Timeval(time_base_seconds seconds, time_base_seconds useconds) {
+    fTv.tv_sec = seconds; fTv.tv_usec = useconds;
+  }
 
 private:
-	time_base_seconds& secs() {
-		return (time_base_seconds&)fTv.tv_sec;
-	}
-	time_base_seconds& usecs() {
-		return (time_base_seconds&)fTv.tv_usec;
-	}
+  time_base_seconds& secs() {
+    return (time_base_seconds&)fTv.tv_sec;
+  }
+  time_base_seconds& usecs() {
+    return (time_base_seconds&)fTv.tv_usec;
+  }
 
-	struct timeval fTv;
+  struct timeval fTv;
 };
 
 #ifndef max
 inline Timeval max(Timeval const& arg1, Timeval const& arg2) {
-	return arg1 >= arg2 ? arg1 : arg2;
+  return arg1 >= arg2 ? arg1 : arg2;
 }
 #endif
 #ifndef min
 inline Timeval min(Timeval const& arg1, Timeval const& arg2) {
-	return arg1 <= arg2 ? arg1 : arg2;
+  return arg1 <= arg2 ? arg1 : arg2;
 }
 #endif
 
@@ -101,10 +101,10 @@ class DelayInterval operator-(Timeval const& arg1, Timeval const& arg2);
 
 ///// DelayInterval /////
 
-class DelayInterval : public Timeval {
+class DelayInterval: public Timeval {
 public:
-	DelayInterval(time_base_seconds seconds, time_base_seconds useconds)
-		: Timeval(seconds, useconds) {}
+  DelayInterval(time_base_seconds seconds, time_base_seconds useconds)
+    : Timeval(seconds, useconds) {}
 };
 
 DelayInterval operator*(short arg1, DelayInterval const& arg2);
@@ -115,68 +115,68 @@ extern DelayInterval const DELAY_MINUTE;
 extern DelayInterval const DELAY_HOUR;
 extern DelayInterval const DELAY_DAY;
 
-///// EventTime /////
+///// _EventTime /////
 
-class EventTime : public Timeval {
+class _EventTime: public Timeval {
 public:
-	EventTime(unsigned secondsSinceEpoch = 0,
-		unsigned usecondsSinceEpoch = 0)
-		// We use the Unix standard epoch: January 1, 1970
-		: Timeval(secondsSinceEpoch, usecondsSinceEpoch) {}
+  _EventTime(unsigned secondsSinceEpoch = 0,
+	    unsigned usecondsSinceEpoch = 0)
+    // We use the Unix standard epoch: January 1, 1970
+    : Timeval(secondsSinceEpoch, usecondsSinceEpoch) {}
 };
 
-EventTime TimeNow();
+_EventTime TimeNow();
 
-extern EventTime const THE_END_OF_TIME;
+extern _EventTime const THE_END_OF_TIME;
 
 
 ///// DelayQueueEntry /////
 
 class DelayQueueEntry {
 public:
-	virtual ~DelayQueueEntry();
+  virtual ~DelayQueueEntry();
 
-	intptr_t token() {
-		return fToken;
-	}
+  intptr_t token() {
+    return fToken;
+  }
 
 protected: // abstract base class
-	DelayQueueEntry(DelayInterval delay);
+  DelayQueueEntry(DelayInterval delay);
 
-	virtual void handleTimeout();
+  virtual void handleTimeout();
 
 private:
-	friend class DelayQueue;
-	DelayQueueEntry* fNext;
-	DelayQueueEntry* fPrev;
-	DelayInterval fDeltaTimeRemaining;
+  friend class DelayQueue;
+  DelayQueueEntry* fNext;
+  DelayQueueEntry* fPrev;
+  DelayInterval fDeltaTimeRemaining;
 
-	intptr_t fToken;
-	static intptr_t tokenCounter;
+  intptr_t fToken;
+  static intptr_t tokenCounter;
 };
 
 ///// DelayQueue /////
 
-class DelayQueue : public DelayQueueEntry {
+class DelayQueue: public DelayQueueEntry {
 public:
-	DelayQueue();
-	virtual ~DelayQueue();
+  DelayQueue();
+  virtual ~DelayQueue();
 
-	void addEntry(DelayQueueEntry* newEntry); // returns a token for the entry
-	void updateEntry(DelayQueueEntry* entry, DelayInterval newDelay);
-	void updateEntry(intptr_t tokenToFind, DelayInterval newDelay);
-	void removeEntry(DelayQueueEntry* entry); // but doesn't delete it
-	DelayQueueEntry* removeEntry(intptr_t tokenToFind); // but doesn't delete it
+  void addEntry(DelayQueueEntry* newEntry); // returns a token for the entry
+  void updateEntry(DelayQueueEntry* entry, DelayInterval newDelay);
+  void updateEntry(intptr_t tokenToFind, DelayInterval newDelay);
+  void removeEntry(DelayQueueEntry* entry); // but doesn't delete it
+  DelayQueueEntry* removeEntry(intptr_t tokenToFind); // but doesn't delete it
 
-	DelayInterval const& timeToNextAlarm();
-	void handleAlarm();
+  DelayInterval const& timeToNextAlarm();
+  void handleAlarm();
 
 private:
-	DelayQueueEntry* head() { return fNext; }
-	DelayQueueEntry* findEntryByToken(intptr_t token);
-	void synchronize(); // bring the 'time remaining' fields up-to-date
+  DelayQueueEntry* head() { return fNext; }
+  DelayQueueEntry* findEntryByToken(intptr_t token);
+  void synchronize(); // bring the 'time remaining' fields up-to-date
 
-	EventTime fLastSyncTime;
+  _EventTime fLastSyncTime;
 };
 
 #endif

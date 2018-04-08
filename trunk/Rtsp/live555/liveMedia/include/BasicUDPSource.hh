@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2018 Live Networks, Inc.  All rights reserved.
 // A simple UDP source, where every UDP payload is a complete frame
 // C++ header
 
@@ -28,28 +28,28 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "Groupsock.hh"
 #endif
 
-class BasicUDPSource : public FramedSource {
+class BasicUDPSource: public FramedSource {
 public:
-	static BasicUDPSource* createNew(UsageEnvironment& env, Groupsock* inputGS);
+  static BasicUDPSource* createNew(UsageEnvironment& env, Groupsock* inputGS);
 
-	virtual ~BasicUDPSource();
+  virtual ~BasicUDPSource();
 
-	Groupsock* gs() const { return fInputGS; }
+  Groupsock* gs() const { return fInputGS; }
 
 private:
-	BasicUDPSource(UsageEnvironment& env, Groupsock* inputGS);
-	// called only by createNew()
+  BasicUDPSource(UsageEnvironment& env, Groupsock* inputGS);
+      // called only by createNew()
 
-	static void incomingPacketHandler(BasicUDPSource* source, int mask);
-	void incomingPacketHandler1();
+  static void incomingPacketHandler(BasicUDPSource* source, int mask);
+  void incomingPacketHandler1();
 
 private: // redefined virtual functions:
-	virtual void doGetNextFrame();
-	virtual void doStopGettingFrames();
+  virtual void doGetNextFrame();
+  virtual void doStopGettingFrames();
 
 private:
-	Groupsock* fInputGS;
-	Boolean fHaveStartedReading;
+  Groupsock* fInputGS;
+  Boolean fHaveStartedReading;
 };
 
 #endif

@@ -20,6 +20,7 @@ typedef struct unix_socket_st
 	UNIX_SOCKET_MODE		mode;
 	int		status;
 	char	server[64];
+	char	clnt[64];
 	
 	int 	listenfd;
 	int 	max_clnt;
@@ -37,7 +38,7 @@ typedef struct unix_socket_st
 }unix_socket_t;
 
 //public
-unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* servername, recv_callback on_recv, status_callback on_status);
+unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* servername, char* clntname, recv_callback on_recv, status_callback on_status);
 void unix_socket_destory(unix_socket_t* sock);
 
 int unix_socket_listen(unix_socket_t* sock);
@@ -50,7 +51,7 @@ int unix_socket_send(char* data, unsigned int length, int fd);
 
 //private
 int unix_socket_server_open(unix_socket_t* sock, char* servername);
-int unix_socket_client_open(unix_socket_t* sock);
+int unix_socket_client_open(unix_socket_t* sock, char* clntname);
 void* unix_socket_server_recv(void* arg);
 void* unix_socket_client_recv(void* arg);
 

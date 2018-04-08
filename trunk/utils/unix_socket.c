@@ -14,7 +14,7 @@
 #include "unix_socket.h"
 #include "utils_log.h"
 
-unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* servername, recv_callback on_recv, status_callback on_status)
+unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* servername, char* clntname, recv_callback on_recv, status_callback on_status)
 {
 	unix_socket_t* sock = (unix_socket_t*)malloc(sizeof(unix_socket_t));
 
@@ -37,7 +37,7 @@ unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* server
 	else
 	{
 		sock->connfd = -1;
-		ret = unix_socket_client_open(sock);
+		ret = unix_socket_client_open(sock, clntname);
 		if(ret != 0)
 		{
 			free(sock);
@@ -45,6 +45,7 @@ unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* server
 			return NULL;
 		}
 		sock->clnt_array = NULL;
+		snprintf(sock->clnt, 64, "%s", clntname);
 	}
 
 	snprintf(sock->server, 64, "%s", servername);
@@ -124,7 +125,7 @@ int unix_socket_accept(unix_socket_t* sock)
 int unix_socket_reconn(unix_socket_t* sock)
 {
 	int ret;
-	ret = unix_socket_client_open(sock);
+	ret = unix_socket_client_open(sock, sock->clnt);
 	if(ret != 0)
 	{
 		return ret;
@@ -227,7 +228,7 @@ int unix_socket_server_open(unix_socket_t* sock, char* servername)
 	return rval;
 }
 
-int unix_socket_client_open(unix_socket_t* sock)
+int unix_socket_client_open(unix_socket_t* sock, char* clntname)
 {
 	int fd;
 	if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0)    /* create a UNIX domain stream socket */
@@ -240,7 +241,7 @@ int unix_socket_client_open(unix_socket_t* sock)
 	struct sockaddr_un un;
 	memset(&un, 0, sizeof(un));            	/* fill socket address structure with our address */
 	un.sun_family = AF_UNIX;
-	sprintf(un.sun_path, "scktmp%05d", getpid());
+	sprintf(un.sun_path, "%s", clntname);
 	
 	len = offsetof(struct sockaddr_un, sun_path) + strlen(un.sun_path);
 	unlink(un.sun_path);               		/* in case it already exists */
@@ -309,7 +310,7 @@ void* unix_socket_server_recv(void* arg)
 			struct sockaddr_un un;
 			struct stat statbuf;
 			int len = sizeof(un);
-			if ((clnt = accept(sock->listenfd, (struct sockaddr *)&un, &len)) < 0)
+			if ((clnt = accept(sock->listenfd, (struct sockaddr *)&un, (socklen_t*)&len)) < 0)
 			{
 				LOGE_print("accept error");
 			}

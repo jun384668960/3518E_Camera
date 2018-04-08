@@ -19,7 +19,7 @@ static void on_status(void* sock, int fd, int status)
 
 int main()
 {
-	unix_socket_t* sock = unix_socket_create(UNIX_SOCKET_SERVER, 10, "test", on_recv, on_status);
+	unix_socket_t* sock = unix_socket_create(UNIX_SOCKET_SERVER, 10, "test", "", on_recv, on_status);
 	LOGW_print("====================");
 	unix_socket_listen(sock);
 	LOGW_print("====================");

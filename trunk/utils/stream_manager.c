@@ -42,7 +42,7 @@ shm_stream_t* shm_stream_create(char* id, char* name, int users, int infos, int 
 		user[0].offset = 0;
 		user[0].users = 0;
 
-		snprintf(user[0].id, 12, "%s", id);
+		snprintf(user[0].id, 32, "%s", id);
 		for(i=1; i<users; i++)	//	初始化其他模式的读下标
 		{
 			if(strlen(user[i].id) != 0)
@@ -50,15 +50,17 @@ shm_stream_t* shm_stream_create(char* id, char* name, int users, int infos, int 
 				LOGI_print("reader user[%d].id:%s", i, user[i].id);
 				user[i].index = user[0].index;
 				user[0].users++;
-			}	
+			}
+			printf("%d=>%s ", i, user[i].id);
 		}
+		printf("\n");
 	}
 	else
 	{
 		//如果是重复注册
 		for (i=1; i<users; i++)
 		{
-			if (strncmp(user[i].id, id, 11) == 0)
+			if (strncmp(user[i].id, id, 32) == 0)
 			{
 				handle->index = i;
 				user[i].index = user[0].index;
@@ -74,12 +76,18 @@ shm_stream_t* shm_stream_create(char* id, char* name, int users, int infos, int 
 				handle->index = i;
 				user[i].index = user[0].index;
 				user[0].users++;
-				snprintf(user[i].id, 12, "%s", id);
+				snprintf(user[i].id, 32, "%s", id);
 				LOGI_print("reader user[%d].id:%s", i, user[i].id);
 				
 				break;
 			}
 		}
+
+		for(i=1; i<users; i++)	//	初始化其他模式的读下标
+		{
+			printf("%d=>%s ", i, user[i].id);
+		}
+		printf("\n");
 	}
 
 shm_stream_create_done:
@@ -95,7 +103,7 @@ void shm_stream_destory(shm_stream_t* handle)
 	if(handle->mode == SHM_STREAM_READ)
 		user[0].users--;
 
-	memset(user[handle->index].id, 0, 12);
+	memset(user[handle->index].id, 0, 32);
 	shmdt(handle->user_array);
 
 	csem_post(handle->sem);
@@ -110,7 +118,7 @@ int shm_stream_put(shm_stream_t* handle, frame_info info, unsigned char* data, u
 	//如果没有人想要数据 则不put
 	if(shm_stream_readers(handle) == 0)
 	{
-		return 0;
+		return -1;
 	}
 	
 	unsigned int head;
@@ -125,6 +133,7 @@ int shm_stream_put(shm_stream_t* handle, frame_info info, unsigned char* data, u
 	if(length + users[0].offset > handle->size) 	//addr不够存储了， 重头存储
 	{
 		infos[head].offset = 0;
+		users[0].offset = 0;
 	}
 	else
 	{
@@ -134,8 +143,8 @@ int shm_stream_put(shm_stream_t* handle, frame_info info, unsigned char* data, u
 	
 	users[0].offset += length;
 	users[0].index = (users[0].index + 1 ) % handle->max_frames;
-	LOGI_print("users[0].offset:%d users[0].index:%d", users[0].offset, users[0].index);
-	LOGI_print("users[%d].lenght:%d users[%d].offset:%d", head, infos[head].lenght, head, infos[head].offset);
+//	LOGI_print("users[0].offset:%d users[0].index:%d", users[0].offset, users[0].index);
+//	LOGI_print("users[%d].lenght:%d users[%d].offset:%d", head, infos[head].lenght, head, infos[head].offset);
 	
 	csem_post(handle->sem);
 	return 0;
@@ -149,16 +158,16 @@ int shm_stream_get(shm_stream_t* handle, frame_info* info, unsigned char** data,
 	shm_user_t* users = (shm_user_t*)handle->user_array;
 	head = users[0].index % handle->max_frames;
 	tail = users[handle->index].index % handle->max_frames;
-	LOGI_print("head:%d tail:%d", head, tail);
+//	LOGI_print("head:%d tail:%d", head, tail);
 
 	if (head != tail)
 	{
 		shm_info_t* infos = (shm_info_t*)handle->info_array;
 		memcpy(info, &infos[tail].info, sizeof(frame_info));
-		*data = handle->base_addr + infos[tail].offset;
+		*data = (unsigned char*)(handle->base_addr + infos[tail].offset);
 		*length = infos[tail].lenght;
 
-		users[handle->index].index = (tail + 1 ) % handle->max_frames;
+//		users[handle->index].index = (tail + 1 ) % handle->max_frames;
 		csem_post(handle->sem);
 		return 0;
 	}
@@ -169,6 +178,24 @@ int shm_stream_get(shm_stream_t* handle, frame_info* info, unsigned char** data,
 		csem_post(handle->sem);
 		return -1;
 	}
+}
+
+int shm_stream_post(shm_stream_t* handle)
+{
+	volatile unsigned int tail, head;
+
+	csem_wait(handle->sem);
+	shm_user_t* users = (shm_user_t*)handle->user_array;
+	head = users[0].index % handle->max_frames;
+	tail = users[handle->index].index % handle->max_frames;
+
+	if (head != tail)
+	{
+		users[handle->index].index = (tail + 1 ) % handle->max_frames;
+	}
+	csem_post(handle->sem);
+
+	return 0;
 }
 
 int shm_stream_sync(shm_stream_t* handle)
@@ -253,7 +280,14 @@ void* shm_stream_mmap(shm_stream_t* handle, char* name, unsigned int size)
 	
 	shmctl(shmid, IPC_STAT, &buf);
 	if (buf.shm_nattch == 1)
+	{
+		LOGI_print("shm_nattch:%d", buf.shm_nattch);
 		memset(memory, 0, size);
+	}
+	else
+	{
+		LOGI_print("shm_nattch:%d", buf.shm_nattch);
+	}
 	
 	return memory;
 }

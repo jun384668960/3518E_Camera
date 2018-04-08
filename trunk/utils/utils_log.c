@@ -19,6 +19,9 @@
 #include <unistd.h>
 
 #include "utils_log.h"
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 static char s_log_buffer[MAX_LOG_BUFSIZE] = {0};
 static log_ctrl* s_log_ctrl;
@@ -192,4 +195,7 @@ int  log_ctrl_print(log_ctrl* log, int level, char* t, ...)
 	
 	return 0;
 }
+#ifdef __cplusplus
+}
+#endif
 

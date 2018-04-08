@@ -13,7 +13,7 @@
  */
 
 unsigned our_inet_addr(cp)
-char const* cp;
+	char const* cp;
 {
 	return inet_addr(cp);
 }
@@ -31,13 +31,13 @@ int initializeWinsockIfNecessary(void) {
 
 	if (!_haveInitializedWinsock) {
 		if ((WSAStartup(WS_VERSION_CHOICE1, &wsadata) != 0)
-			&& ((WSAStartup(WS_VERSION_CHOICE2, &wsadata)) != 0)) {
+		    && ((WSAStartup(WS_VERSION_CHOICE2, &wsadata)) != 0)) {
 			return 0; /* error in initialization */
 		}
-		if ((wsadata.wVersion != WS_VERSION_CHOICE1)
-			&& (wsadata.wVersion != WS_VERSION_CHOICE2)) {
-			WSACleanup();
-			return 0; /* desired Winsock version was not available */
+	    	if ((wsadata.wVersion != WS_VERSION_CHOICE1)
+	    	    && (wsadata.wVersion != WS_VERSION_CHOICE2)) {
+	        	WSACleanup();
+				return 0; /* desired Winsock version was not available */
 		}
 		_haveInitializedWinsock = 1;
 	}
@@ -60,16 +60,16 @@ int initializeWinsockIfNecessary(void) { return 1; }
 #include <stdlib.h>
 long our_random() {
 #if defined(__WIN32__) || defined(_WIN32)
-	return rand();
+  return rand();
 #else
-	return random();
+  return random();
 #endif
 }
 void our_srandom(unsigned int x) {
 #if defined(__WIN32__) || defined(_WIN32)
-	srand(x);
+  srand(x);
 #else
-	srandom(x);
+  srandom(x);
 #endif
 }
 
@@ -155,7 +155,7 @@ void our_srandom(unsigned int x) {
 #define	MAX_TYPES	5		/* max number of types above */
 
 static int const degrees[MAX_TYPES] = { DEG_0, DEG_1, DEG_2, DEG_3, DEG_4 };
-static int const seps[MAX_TYPES] = { SEP_0, SEP_1, SEP_2, SEP_3, SEP_4 };
+static int const seps [MAX_TYPES] = { SEP_0, SEP_1, SEP_2, SEP_3, SEP_4 };
 
 /*
  * Initially, everything is set up as if from:
@@ -266,9 +266,9 @@ our_srandom(unsigned int x)
  */
 char *
 our_initstate(seed, arg_state, n)
-unsigned int seed;		/* seed for R.N.G. */
-char *arg_state;		/* pointer to state array */
-int n;				/* # bytes of state info */
+	unsigned int seed;		/* seed for R.N.G. */
+	char *arg_state;		/* pointer to state array */
+	int n;				/* # bytes of state info */
 {
 	register char *ostate = (char *)(&state[-1]);
 
@@ -279,7 +279,7 @@ int n;				/* # bytes of state info */
 	if (n < BREAK_0) {
 #ifdef DEBUG
 		(void)fprintf(stderr,
-			"random: not enough state (%d bytes); ignored.\n", n);
+		    "random: not enough state (%d bytes); ignored.\n", n);
 #endif
 		return(0);
 	}
@@ -287,23 +287,19 @@ int n;				/* # bytes of state info */
 		rand_type = TYPE_0;
 		rand_deg = DEG_0;
 		rand_sep = SEP_0;
-	}
-	else if (n < BREAK_2) {
+	} else if (n < BREAK_2) {
 		rand_type = TYPE_1;
 		rand_deg = DEG_1;
 		rand_sep = SEP_1;
-	}
-	else if (n < BREAK_3) {
+	} else if (n < BREAK_3) {
 		rand_type = TYPE_2;
 		rand_deg = DEG_2;
 		rand_sep = SEP_2;
-	}
-	else if (n < BREAK_4) {
+	} else if (n < BREAK_4) {
 		rand_type = TYPE_3;
 		rand_deg = DEG_3;
 		rand_sep = SEP_3;
-	}
-	else {
+	} else {
 		rand_type = TYPE_4;
 		rand_deg = DEG_4;
 		rand_sep = SEP_4;
@@ -335,7 +331,7 @@ int n;				/* # bytes of state info */
  */
 char *
 our_setstate(arg_state)
-char *arg_state;
+	char *arg_state;
 {
 	register long *new_state = (long *)arg_state;
 	register int type = new_state[0] % MAX_TYPES;
@@ -346,7 +342,7 @@ char *arg_state;
 		state[-1] = rand_type;
 	else
 		state[-1] = MAX_TYPES * (rptr - state) + rand_type;
-	switch (type) {
+	switch(type) {
 	case TYPE_0:
 	case TYPE_1:
 	case TYPE_2:
@@ -359,7 +355,7 @@ char *arg_state;
 	default:
 #ifdef DEBUG
 		(void)fprintf(stderr,
-			"random: state info corrupted; not changed.\n");
+		    "random: state info corrupted; not changed.\n");
 #endif
 		break;
 	}
@@ -390,68 +386,66 @@ char *arg_state;
  * Returns a 31-bit random number.
  */
 long our_random() {
-	long i;
+  long i;
 
-	if (rand_type == TYPE_0) {
-		i = state[0] = (state[0] * 1103515245 + 12345) & 0x7fffffff;
-	}
-	else {
-		/* Make copies of "rptr" and "fptr" before working with them, in case we're being called concurrently by multiple threads: */
-		long* rp = rptr;
-		long* fp = fptr;
+  if (rand_type == TYPE_0) {
+    i = state[0] = (state[0] * 1103515245 + 12345) & 0x7fffffff;
+  } else {
+    /* Make copies of "rptr" and "fptr" before working with them, in case we're being called concurrently by multiple threads: */
+    long* rp = rptr;
+    long* fp = fptr;
 
-		/* Make sure "rp" and "fp" are separated by the correct distance (again, allowing for concurrent access): */
-		if (!(fp == rp + SEP_3 || fp + DEG_3 == rp + SEP_3)) {
-			/* A rare case that should occur only if we're being called concurrently by multiple threads. */
-			/* Restore the proper separation between the pointers: */
-			if (rp <= fp) rp = fp - SEP_3; else rp = fp + DEG_3 - SEP_3;
-		}
+    /* Make sure "rp" and "fp" are separated by the correct distance (again, allowing for concurrent access): */
+    if (!(fp == rp+SEP_3 || fp+DEG_3 == rp+SEP_3)) {
+      /* A rare case that should occur only if we're being called concurrently by multiple threads. */
+      /* Restore the proper separation between the pointers: */
+      if (rp <= fp) rp = fp-SEP_3; else rp = fp+DEG_3-SEP_3;
+    }
 
-		*fp += *rp;
-		i = (*fp >> 1) & 0x7fffffff;	/* chucking least random bit */
-		if (++fp >= end_ptr) {
-			fp = state;
-			++rp;
-		}
-		else if (++rp >= end_ptr) {
-			rp = state;
-		}
+    *fp += *rp;
+    i = (*fp >> 1) & 0x7fffffff;	/* chucking least random bit */
+    if (++fp >= end_ptr) {
+      fp = state;
+      ++rp;
+    } else if (++rp >= end_ptr) {
+      rp = state;
+    }
 
-		/* Restore "rptr" and "fptr" from our working copies: */
-		rptr = rp;
-		fptr = fp;
-	}
+    /* Restore "rptr" and "fptr" from our working copies: */
+    rptr = rp;
+    fptr = fp;
+  }
 
-	return i;
+  return i;
 }
 #endif
 
 u_int32_t our_random32() {
-	/* Return a 32-bit random number.
-	   Because "our_random()" returns a 31-bit random number, we call it a second
-	   time, to generate the high bit.
-	   (Actually, to increase the likelhood of randomness, we take the middle 16 bits of two successive calls to "our_random()")
-	   */
-	long random_1 = our_random();
-	u_int32_t random16_1 = (u_int32_t)(random_1 & 0x00FFFF00);
+  /* Return a 32-bit random number.
+     Because "our_random()" returns a 31-bit random number, we call it a second
+     time, to generate the high bit.
+     (Actually, to increase the likelhood of randomness, we take the middle 16 bits of two successive calls to "our_random()")
+  */
+  long random_1 = our_random();
+  u_int32_t random16_1 = (u_int32_t)(random_1&0x00FFFF00);
 
-	long random_2 = our_random();
-	u_int32_t random16_2 = (u_int32_t)(random_2 & 0x00FFFF00);
+  long random_2 = our_random();
+  u_int32_t random16_2 = (u_int32_t)(random_2&0x00FFFF00);
 
-	return (random16_1 << 8) | (random16_2 >> 8);
+  return (random16_1<<8) | (random16_2>>8);
 }
 
 #ifdef USE_OUR_BZERO
 #ifndef __bzero
 void
-__bzero(to, count)
-char *to;
-int count;
+__bzero (to, count)
+  char *to;
+  int count;
 {
-	while (count-- > 0)
-	{
-		*to++ = 0;
-	}
-}
+  while (count-- > 0)
+    {
+      *to++ = 0;
+    }
+}             
 #endif
 #endif

@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2018 Live Networks, Inc.  All rights reserved.
 // Basic Usage Environment: for a simple, non-scripted, console application
 // C++ header
 
@@ -27,51 +27,51 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 ////////// HandlerSet (etc.) definition //////////
 
 class HandlerDescriptor {
-	HandlerDescriptor(HandlerDescriptor* nextHandler);
-	virtual ~HandlerDescriptor();
+  HandlerDescriptor(HandlerDescriptor* nextHandler);
+  virtual ~HandlerDescriptor();
 
 public:
-	int socketNum;
-	int conditionSet;
-	TaskScheduler::BackgroundHandlerProc* handlerProc;
-	void* clientData;
+  int socketNum;
+  int conditionSet;
+  TaskScheduler::BackgroundHandlerProc* handlerProc;
+  void* clientData;
 
 private:
-	// Descriptors are linked together in a doubly-linked list:
-	friend class HandlerSet;
-	friend class HandlerIterator;
-	HandlerDescriptor* fNextHandler;
-	HandlerDescriptor* fPrevHandler;
+  // Descriptors are linked together in a doubly-linked list:
+  friend class HandlerSet;
+  friend class HandlerIterator;
+  HandlerDescriptor* fNextHandler;
+  HandlerDescriptor* fPrevHandler;
 };
 
 class HandlerSet {
 public:
-	HandlerSet();
-	virtual ~HandlerSet();
+  HandlerSet();
+  virtual ~HandlerSet();
 
-	void assignHandler(int socketNum, int conditionSet, TaskScheduler::BackgroundHandlerProc* handlerProc, void* clientData);
-	void clearHandler(int socketNum);
-	void moveHandler(int oldSocketNum, int newSocketNum);
-
-private:
-	HandlerDescriptor* lookupHandler(int socketNum);
+  void assignHandler(int socketNum, int conditionSet, TaskScheduler::BackgroundHandlerProc* handlerProc, void* clientData);
+  void clearHandler(int socketNum);
+  void moveHandler(int oldSocketNum, int newSocketNum);
 
 private:
-	friend class HandlerIterator;
-	HandlerDescriptor fHandlers;
+  HandlerDescriptor* lookupHandler(int socketNum);
+
+private:
+  friend class HandlerIterator;
+  HandlerDescriptor fHandlers;
 };
 
 class HandlerIterator {
 public:
-	HandlerIterator(HandlerSet& handlerSet);
-	virtual ~HandlerIterator();
+  HandlerIterator(HandlerSet& handlerSet);
+  virtual ~HandlerIterator();
 
-	HandlerDescriptor* next(); // returns NULL if none
-	void reset();
+  HandlerDescriptor* next(); // returns NULL if none
+  void reset();
 
 private:
-	HandlerSet& fOurSet;
-	HandlerDescriptor* fNextPtr;
+  HandlerSet& fOurSet;
+  HandlerDescriptor* fNextPtr;
 };
 
 #endif

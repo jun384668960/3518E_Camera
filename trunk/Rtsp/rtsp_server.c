@@ -1,9 +1,18 @@
 #include <stdio.h>
-#include "live555/live555MediaServer.h"
+#include <unistd.h>
+
+#include "rtsp.h"
+#include "utils_log.h"
 
 int main(int argc, char* argv[])
 {
-	RTSP_Start();
+	RTSPInit();
+
+	while(1)
+	{
+		LOGD_print("===================");
+		usleep(1000*1000);
+	}
 	
 	return 0;
 }

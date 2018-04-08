@@ -1,41 +1,23 @@
+CROSS := arm-hisiv300-linux-
+CC := $(CROSS)g++
+CFLAG := -Wno-write-strings -lpthread -lliveMedia -lgroupsock -lBasicUsageEnvironment -lUsageEnvironment -L./libs \
+		-I../utils -I./include \
+		-I./live555/BasicUsageEnvironment/include \
+		-I./live555/groupsock/include \
+		-I./live555/liveMedia/include \
+		-I./live555/UsageEnvironment/include
+		
+BINS := rtsp_server
 
-INC_DIR := ../utils
-INC := $(patsubst %,-I%/include,$(INC_DIR)) -I../utils/
+SRCS := $(wildcard ./src/*.cpp)
+SRCS += $(wildcard ../utils/*.c)
+OBJS := $(wildcard ./*.o ./src/*.o ../utils/*.o)
 
-SRC := $(wildcard *.c $(patsubst %,%/*.c,$(INC_DIR)))
-OBJ := $(patsubst %.c,%.obj,$(patsubst %.c,%.o,$(SRC)))
-DEP := $(patsubst %.obj,%.dep,$(patsubst %.o,%.d,$(OBJ)))
+all: $(BINS)
 
-#COMPILE_PREFIX := @echo -n ".";
-CC := $(COMPILE_PREFIX)cc
-CFLAGS := $(INC) -O0 -Wall -DBSD=1 -DSOCKLEN_T=socklen_t -D_LARGEFILE_SOURCE=1 -D_FILE_OFFSET_BITS=64
-CXX := $(COMPILE_PREFIX)gcc
-CXXFLAGS := $(CFLAGS)
-LD := $(COMPILE_PREFIX)gcc -o
-LDFLAGS :=
-LIBS := -L. -llive555
-
-TARGET := rtsp_server
-
-.PHONY : all clean
-
-all : $(TARGET)
-
-%.o : %.c
-	$(CC) $(CFLAGS) -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c $< -o $@
-
-%.obj : %.cpp
-	$(CXX) $(CXXFLAGS) -MMD -MP -MF"$(@:%.obj=%.dep)" -MT"$(@:%.obj=%.dep)" -c $< -o $@
-
-$(TARGET) : $(OBJ)
-	@cd live555;   make
-	$(LD) $@ $(LDFLAGS) $^  $(LIBS)
-
+rtsp_server:
+	$(CC) rtsp_server.c $(SRCS) -o rtsp_server $(CFLAG)
+	
 clean:
-	@cd live555;   make clean
-	@rm liblive555MediaServer.so
-	@rm -rf $(OBJ) $(DEP) $(TARGET)
-
-sinclude $(DEP)
-
-
+	@rm -rf $(BINS)
+	@rm -rf $(OBJS)

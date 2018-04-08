@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 //∫Í∂®“Â
 #define MAX_LOG_BUFSIZE		2048
@@ -49,19 +52,23 @@ int  log_ctrl_wt_set(log_ctrl* log,int wt);
 int  log_ctrl_file_write(log_ctrl* log, char* data, int len);
 int  log_ctrl_print(log_ctrl* log, int level, char* t, ...);
 
-#define LOGT_print(t, ...)	log_ctrl_print(NULL, LOG_TRACE, "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGD_print(t, ...) 	log_ctrl_print(NULL, LOG_DEBUG, "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGI_print(t, ...) 	log_ctrl_print(NULL, LOG_INFO,  "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGW_print(t, ...)	log_ctrl_print(NULL, LOG_WARN,  "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGE_print(t, ...) 	log_ctrl_print(NULL, LOG_ERR,   "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOGM_print(t, ...) 	log_ctrl_print(NULL, LOG_EMERG, "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGT_print(t, ...)	log_ctrl_print(NULL, LOG_TRACE, "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGD_print(t, ...) 	log_ctrl_print(NULL, LOG_DEBUG, "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGI_print(t, ...) 	log_ctrl_print(NULL, LOG_INFO,  "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGW_print(t, ...)	log_ctrl_print(NULL, LOG_WARN,  "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGE_print(t, ...) 	log_ctrl_print(NULL, LOG_ERR,   "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOGM_print(t, ...) 	log_ctrl_print(NULL, LOG_EMERG, "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
-#define CLOGT_print(c, t, ...)	log_ctrl_print(c, LOG_TRACE, "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CLOGD_print(c, t, ...) 	log_ctrl_print(c, LOG_DEBUG, "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CLOGI_print(c, t, ...) 	log_ctrl_print(c, LOG_INFO,  "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CLOGW_print(c, t, ...)	log_ctrl_print(c, LOG_WARN,  "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CLOGE_print(c, t, ...) 	log_ctrl_print(c, LOG_ERR,   "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define CLOGM_print(c, t, ...) 	log_ctrl_print(c, LOG_EMERG, "[%s][%d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CLOGT_print(c, t, ...)	log_ctrl_print(c, LOG_TRACE, "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CLOGD_print(c, t, ...) 	log_ctrl_print(c, LOG_DEBUG, "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CLOGI_print(c, t, ...) 	log_ctrl_print(c, LOG_INFO,  "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CLOGW_print(c, t, ...)	log_ctrl_print(c, LOG_WARN,  "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CLOGE_print(c, t, ...) 	log_ctrl_print(c, LOG_ERR,   "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define CLOGM_print(c, t, ...) 	log_ctrl_print(c, LOG_EMERG, "[%s][%04d]"t"", __FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

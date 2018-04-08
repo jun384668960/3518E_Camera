@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2018 Live Networks, Inc.  All rights reserved.
 // A simplified version of "H265VideoStreamFramer" that takes only complete,
 // discrete frames (rather than an arbitrary byte stream) as input.
 // This avoids the parsing and data copying overhead of the full
@@ -25,17 +25,17 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 H265VideoStreamDiscreteFramer*
 H265VideoStreamDiscreteFramer::createNew(UsageEnvironment& env, FramedSource* inputSource) {
-	return new H265VideoStreamDiscreteFramer(env, inputSource);
+  return new H265VideoStreamDiscreteFramer(env, inputSource);
 }
 
 H265VideoStreamDiscreteFramer
 ::H265VideoStreamDiscreteFramer(UsageEnvironment& env, FramedSource* inputSource)
-: H264or5VideoStreamDiscreteFramer(265, env, inputSource) {
+  : H264or5VideoStreamDiscreteFramer(265, env, inputSource) {
 }
 
 H265VideoStreamDiscreteFramer::~H265VideoStreamDiscreteFramer() {
 }
 
 Boolean H265VideoStreamDiscreteFramer::isH265VideoStreamFramer() const {
-	return True;
+  return True;
 }

@@ -1,7 +1,7 @@
 /**********
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the
-Free Software Foundation; either version 2.1 of the License, or (at your
+Free Software Foundation; either version 3 of the License, or (at your
 option) any later version. (See <http://www.gnu.org/copyleft/lesser.html>.)
 
 This library is distributed in the hope that it will be useful, but WITHOUT
@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2018 Live Networks, Inc.  All rights reserved.
 // Framed Filters
 // Implementation
 
@@ -24,36 +24,36 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <string.h>
 
 void FramedFilter::detachInputSource() {
-	if (fInputSource != NULL) {
-		fInputSource->stopGettingFrames();
-		reassignInputSource(NULL);
-	}
+  if (fInputSource != NULL) {
+    fInputSource->stopGettingFrames();
+    reassignInputSource(NULL);
+  }
 }
 
 FramedFilter::FramedFilter(UsageEnvironment& env,
-	FramedSource* inputSource)
-	: FramedSource(env),
-	fInputSource(inputSource) {
+			   FramedSource* inputSource)
+  : FramedSource(env),
+    fInputSource(inputSource) {
 }
 
 FramedFilter::~FramedFilter() {
-	Medium::close(fInputSource);
+  Medium::close(fInputSource);
 }
 
 // Default implementations of needed virtual functions.  These merely
 // call the same function in the input source - i.e., act like a 'null filter
 
 char const* FramedFilter::MIMEtype() const {
-	if (fInputSource == NULL) return "";
+  if (fInputSource == NULL) return "";
 
-	return fInputSource->MIMEtype();
+  return fInputSource->MIMEtype();
 }
 
 void FramedFilter::getAttributes() const {
-	if (fInputSource != NULL) fInputSource->getAttributes();
+  if (fInputSource != NULL) fInputSource->getAttributes();
 }
 
 void FramedFilter::doStopGettingFrames() {
-	FramedSource::doStopGettingFrames();
-	if (fInputSource != NULL) fInputSource->stopGettingFrames();
+  FramedSource::doStopGettingFrames();
+  if (fInputSource != NULL) fInputSource->stopGettingFrames();
 }

@@ -20,7 +20,7 @@ typedef struct
 
 typedef struct 
 {
-	char			id[12];	//	用户标识
+	char			id[32];	//	用户标识
 	unsigned int	index;	//	当前读写info_array下标
 	unsigned int	offset;	//	当前数据存储偏移 只用作写模式
 	unsigned int	users;	//	读用户数
@@ -53,6 +53,7 @@ void shm_stream_destory(shm_stream_t* handle);
 
 int shm_stream_put(shm_stream_t* handle, frame_info info, unsigned char* data, unsigned int length);
 int shm_stream_get(shm_stream_t* handle, frame_info* info, unsigned char** data, unsigned int* length);
+int shm_stream_post(shm_stream_t* handle);
 int shm_stream_sync(shm_stream_t* handle);
 int shm_stream_remains(shm_stream_t* handle);
 int shm_stream_readers(shm_stream_t* handle);
