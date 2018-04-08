@@ -4,6 +4,7 @@
 extern "C"{
 #endif
 #include <stdint.h>
+#include <pthread.h>
 
 //获取osd时间戳字符串
 void localtime_string_get(char* tstr);
@@ -15,6 +16,8 @@ unsigned long get_system_mem_freeKb();
 unsigned long long get_system_tf_freeKb(char* dir);
 //获取系统自启动时间到现在的tick数
 int64_t get_tick_count();
+//创建4M栈大小的线程
+int pthread_create_4m(pthread_t *pt_id, void* proc, void* arg);
 
 #ifdef __cplusplus
 }

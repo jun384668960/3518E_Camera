@@ -92,7 +92,7 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 			int ret = shm_stream_put(g_handle, info, g_frame, total_length);
 			if(ret != 0)
 			{
-				LOGE_print("shm_stream_put error");
+//				LOGE_print("shm_stream_put error");
 			}
 			else
 			{
@@ -134,7 +134,7 @@ void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 			int ret = shm_stream_put(g_audiohandle, info, pstStream->pStream + 4, info.length);
 			if(ret != 0)
 			{
-				LOGE_print("shm_stream_put error");
+//				LOGE_print("shm_stream_put error");
 			}
 			else
 			{

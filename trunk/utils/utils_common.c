@@ -69,3 +69,23 @@ int64_t get_tick_count()
 	return (int64_t)now.tv_sec * 1000000 + now.tv_nsec / 1000;
 }
 
+int pthread_create_4m(pthread_t* pt_id, void* proc, void* arg)
+{
+    pthread_attr_t attr;
+    
+    pthread_attr_init (&attr); 
+	int stacksize = (4 << 10 ) << 10;
+	pthread_attr_setstacksize(&attr, stacksize);
+	
+    int ret = pthread_create(pt_id,&attr,(void*)proc,arg);
+    if (ret != 0)
+    {
+      pthread_attr_destroy (&attr); 
+	  printf("pthread_create error %s\n", strerror(ret));
+      return -1;
+    }
+    pthread_attr_destroy (&attr); 
+    
+    return 0;
+}
+
