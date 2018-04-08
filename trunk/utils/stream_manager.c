@@ -128,7 +128,7 @@ int shm_stream_put(shm_stream_t* handle, frame_info info, unsigned char* data, u
 	csem_wait(handle->sem);
 	head = users[0].index % handle->max_frames;
 	
-	memcpy(&(infos[head].info), &info, sizeof(shm_info_t));
+	memcpy(&infos[head].info, &info, sizeof(frame_info));
 	infos[head].lenght = length;
 	if(length + users[0].offset > handle->size) 	//addr不够存储了， 重头存储
 	{

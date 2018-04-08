@@ -27,7 +27,7 @@ VIDEO_NORM_E gs_enNorm = VIDEO_ENCODING_MODE_NTSC;
 HI_U32 g_u32BlkCnt = 4;
 
 static shm_stream_t* g_handle = NULL;
-static unsigned char g_frame[128*1024];
+static unsigned char g_frame[256*1024];
 
 ////////////////////////////////////////////////////////////////
 static PAYLOAD_TYPE_E gs_enPayloadType = PT_G711A;
@@ -75,9 +75,6 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 			fflush(h264);
 		}
 #else
-		if(g_handle == NULL)
-			g_handle = shm_stream_create("write", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_WRITE);
-
 		if(g_handle != NULL)
 		{
 			frame_info info;
@@ -120,9 +117,6 @@ void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 			fflush(g711a);
 		}
 #else
-		if(g_audiohandle == NULL)
-			g_audiohandle = shm_stream_create("write", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_WRITE);
-
 		if(g_audiohandle != NULL)
 		{
 			frame_info info;
@@ -349,11 +343,6 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
         goto END_VENC_1080P_CLASSIC_0;
     }
 
-	/******************************************
-     step 2.1: 
-    ******************************************/
-    SAMPLE_RGN_CreateOverlayForVenc(0, 0);
-
     /******************************************
      step 3: start vi dev & chn to capture
     ******************************************/
@@ -542,8 +531,6 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
 	    }
 	}
 
-	pthread_t g_stOsdUpdateThread = 0;
-	pthread_create(&g_stOsdUpdateThread, NULL, SAMPLE_RGN_UpdateBitmap, NULL);
     /******************************************
      step 6: stream venc process -- get stream, then save it to file. 
     ******************************************/
@@ -560,11 +547,6 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
      step 7: exit process
     ******************************************/
     SAMPLE_COMM_VENC_StopGetStream();
-
-	if(g_stOsdUpdateThread)
-	{
-		pthread_join(g_stOsdUpdateThread, NULL);
-	}
 	
 END_VENC_1080P_CLASSIC_5:
 	
@@ -616,8 +598,6 @@ END_VENC_1080P_CLASSIC_2:    //vpss stop
 END_VENC_1080P_CLASSIC_1:	//vi stop
     SAMPLE_COMM_VI_StopVi(&stViConfig);
 END_VENC_1080P_CLASSIC_0:	//system exit
-
-	SAMPLE_RGN_DestroyRegion(0, 0);
     SAMPLE_COMM_SYS_Exit();
     
     return s32Ret;    
@@ -799,13 +779,29 @@ HI_S32 SAMPLE_AUDIO_AiAenc(HI_VOID)
 
 int main()
 {
+	g_handle = shm_stream_create("write", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_WRITE);
+	g_audiohandle = shm_stream_create("write", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_WRITE);
+
 	SAMPLE_VENC_1080P_CLASSIC();
 	SAMPLE_AUDIO_AiAenc();
-	
+
+	/******************************************
+     step 2.1: 
+    ******************************************/
+    SAMPLE_RGN_CreateOverlayForVenc(0, 0);
+
+	pthread_t g_stOsdUpdateThread = 0;
+	pthread_create(&g_stOsdUpdateThread, NULL, SAMPLE_RGN_UpdateBitmap, NULL);
 	while(1)
 	{
 		usleep(1000*10);
 	}
+	
+	if(g_stOsdUpdateThread)
+		pthread_join(g_stOsdUpdateThread, NULL);
+	SAMPLE_RGN_DestroyRegion(0, 0);
 
+	shm_stream_destory(g_handle);
+	shm_stream_destory(g_audiohandle);
 	return 0;
 }
