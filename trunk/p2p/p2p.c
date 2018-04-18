@@ -26,11 +26,61 @@ typedef struct _gos_frame_head
 #define P2P_TURN_SERVER  		"119.23.128.209:6001"	
 #define P2P_SERVER 				"119.23.128.209"
 #define P2P_PORT				34780
-#define P2P_UID 				"A99762101001002"
+#define P2P_UID 				"A99762001001002"
+static int s_vsnd_stop = 0;
+void* thread_p2p_vsnd(void* param)
+{	
+	gos_frame_head head;
+	memset(&head, 0x0, sizeof(gos_frame_head));
+	unsigned char pData[200*1024] = {0};
+	unsigned int vframe_no = 0;
+	p2p_handle* handle = (p2p_handle*)param;
+	shm_stream_t* main_stream = shm_stream_create("p2p_mainread", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_READ);
+	while(s_vsnd_stop != 1)
+	{
+		int is_video = SND_VIDEO_HD;
+		int is_key;
+
+		frame_info info;
+		unsigned char* frame;
+		unsigned int length;
+		int ret = shm_stream_get(main_stream, &info, &frame, &length);
+		if(ret == 0)
+		{
+			if(p2p_handle_av_swtich(handle, is_video) == 0)
+			{
+				head.nCodeType = 12;
+				head.nDataSize = info.length;
+				head.nFrameNo = vframe_no++;
+				head.nFrameRate = 30;
+				head.nTimestamp = info.pts/1000;
+				head.sWidth = 1280;
+				head.sWidth = 720;
+				head.nFrameType = info.key == 1? 2 : 1;
+				memcpy(pData, &head, sizeof(gos_frame_head));
+				memcpy(pData + sizeof(gos_frame_head), frame, length);
+
+				p2p_handle_write(handle, (unsigned char*)pData, length+sizeof(gos_frame_head), is_video, info.pts/1000, info.key == 1? 0 : 1);
+			}
+			shm_stream_post(main_stream);
+//			LOGI_print("!main_stream remains:%d", shm_stream_remains(main_stream));
+		}
+		else
+		{
+			usleep(33*1000);
+		}
+	}
+
+	if(main_stream != NULL)
+	{
+		shm_stream_destory(main_stream);
+	}
+	return NULL;
+}
 
 int main()
 {
-	p2p_handle* handle = p2p_handle_create("A99762101001002");
+	p2p_handle* handle = p2p_handle_create(P2P_UID);
 	if(handle == NULL)
 	{
 		LOGE_print("p2p_handle_create error");
@@ -43,11 +93,18 @@ int main()
 		return -1;
 	}
 
-	shm_stream_t* main_stream = shm_stream_create("p2p_mainread", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_READ);
+	shm_stream_t* audio_stream = shm_stream_create("p2p_audioread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_AUDIO_MAX_SIZE, SHM_STREAM_READ);
 	gos_frame_head head;
 	memset(&head, 0x0, sizeof(gos_frame_head));
 	unsigned char pData[200*1024] = {0};
-	unsigned int frame_no = 0;
+	unsigned int vframe_no = 0;
+	unsigned int aframe_no = 0;
+	pthread_t tid_vsnd;
+	if(pthread_create(&tid_vsnd, NULL, thread_p2p_vsnd, handle) != 0)
+	{
+		LOGE_print("pthread_create thread_p2p_vsnd error");
+		exit(0);
+	}
 	while(1)
 	{
 		int is_video = SND_VIDEO_HD;
@@ -56,36 +113,39 @@ int main()
 		frame_info info;
 		unsigned char* frame;
 		unsigned int length;
-		int ret = shm_stream_get(main_stream, &info, &frame, &length);
+		int ret = shm_stream_get(audio_stream, &info, &frame, &length);
 		if(ret == 0)
 		{
-			if(p2p_handle_av_swtich(handle, is_video) != 0)
+			if(p2p_handle_av_swtich(handle, SND_AUDIO) == 0)
 			{
-				usleep(10*1000);
-				continue;
-			}
-					
-			head.nCodeType = 12;
-			head.nDataSize = info.length;
-			head.nFrameNo = frame_no++;
-			head.nFrameRate = 30;
-			head.nTimestamp = info.pts/1000;
-			head.sWidth = 1280;
-			head.sWidth = 720;
-			head.nFrameType = info.key == 1? 2 : 1;
-			memcpy(pData, &head, sizeof(gos_frame_head));
-			memcpy(pData + sizeof(gos_frame_head), frame, length);
+				head.nCodeType = 52;
+				head.nDataSize = info.length;
+				head.nFrameNo = aframe_no++;
+				head.nFrameRate = 8000;
+				head.nTimestamp = info.pts/1000;
+				head.sWidth = 1280;
+				head.sWidth = 720;
+				head.nFrameType = 50;
+				memcpy(pData, &head, sizeof(gos_frame_head));
+				memcpy(pData + sizeof(gos_frame_head), frame, length);
 
-			p2p_handle_write(handle, (unsigned char*)pData, length+sizeof(gos_frame_head), is_video, info.pts/1000, info.key == 1? 0 : 1);
-			shm_stream_post(main_stream);
+				p2p_handle_write(handle, (unsigned char*)pData, length+sizeof(gos_frame_head), is_video, info.pts/1000, 1);
+			}
+			shm_stream_post(audio_stream);
+//			LOGI_print("audio_stream remains:%d", shm_stream_remains(audio_stream));
 		}
-		
-		usleep(10*1000);
+		else
+		{
+			usleep(40*1000);
+		}
 	}
-	if(main_stream != NULL)
+	if(audio_stream != NULL)
 	{
-		shm_stream_destory(main_stream);
+		shm_stream_destory(audio_stream);
 	}
+	s_vsnd_stop = 1;
+	pthread_join(tid_vsnd, NULL);
+	
 	p2p_handle_uninit(handle);
 	p2p_handle_destory(handle);
 	

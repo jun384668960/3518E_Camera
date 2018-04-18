@@ -204,8 +204,6 @@ void on_accept_remote_connection(p2p_transport *transport,
 
 	p2p_trans* pHandle = get_p2p_trans_handle();
 	if(pHandle == NULL) return;
-
-	exec_cmd("sh /opt/ipnc/clearCached.sh&");
 	
 	//最大连接数控制
 	p2p_conn_clnt* client = p2p_conn_clnt_create((p2p_handle*)pHandle, connection_id, NULL);
@@ -503,7 +501,7 @@ int do_data_av_send(unsigned char* data, unsigned int len, int id, int flag, p2p
 	int sended = p2p_transport_av_send(pHandle->m_pTransport, id, (char*)data, (int)len, flag ,mode, &error);
 	if(sended > 0)
 	{
-		LOGT_print("p2p send successful! msgType:%x size:%u\r", head->msgType, head->size);
+//		LOGT_print("p2p send successful! msgType:%x size:%u\r", head->msgType, head->size);
 		return 0;
 	}
 	else

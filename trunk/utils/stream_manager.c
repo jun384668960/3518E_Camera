@@ -254,7 +254,7 @@ void* shm_stream_mmap(shm_stream_t* handle, char* name, unsigned int size)
 	struct shmid_ds buf;
 	
 	char filename[32];
-	snprintf(filename, 32, "/tmp/.%s", name);
+	snprintf(filename, 32, "/dev/.%s", name);
 	if((fd = open(filename, O_RDWR|O_CREAT|O_EXCL)) > 0)
 	{
 		close(fd);

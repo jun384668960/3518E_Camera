@@ -11,12 +11,25 @@ void localtime_string_get(char* tstr)
 	char *wday[]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 	time_t timep;
 	struct tm *p;
-	
+
+	tzset();
 	time(&timep);
 	p=localtime(&timep);
 	
 	sprintf(tstr,"%d/%02d/%02d %s %02d:%02d:%02d", (1900+p->tm_year),(1+p->tm_mon), p->tm_mday
 		, wday[p->tm_wday],p->tm_hour, p->tm_min, p->tm_sec);
+}
+
+void localtime_mp4name_get(char* filename)
+{
+	time_t timep;
+	struct tm *p;
+	tzset();
+	time(&timep);
+	p=localtime(&timep);
+	sprintf(filename,"%d-%02d-%02d %02d-%02d-%02d.mp4", (1900+p->tm_year),(1+p->tm_mon), p->tm_mday
+		, p->tm_hour, p->tm_min, p->tm_sec);
+
 }
 
 int exec_cmd(const char *cmd)   
@@ -69,7 +82,7 @@ int64_t get_tick_count()
 	return (int64_t)now.tv_sec * 1000000 + now.tv_nsec / 1000;
 }
 
-int pthread_create_4m(pthread_t* pt_id, void* proc, void* arg)
+int pthread_create_4m(pthread_t* pt_id, void *(*proc)(void *), void* arg)
 {
     pthread_attr_t attr;
     
@@ -77,7 +90,7 @@ int pthread_create_4m(pthread_t* pt_id, void* proc, void* arg)
 	int stacksize = (4 << 10 ) << 10;
 	pthread_attr_setstacksize(&attr, stacksize);
 	
-    int ret = pthread_create(pt_id,&attr,(void*)proc,arg);
+    int ret = pthread_create(pt_id,&attr,proc,arg);
     if (ret != 0)
     {
       pthread_attr_destroy (&attr); 

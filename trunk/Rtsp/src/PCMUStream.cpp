@@ -37,7 +37,7 @@ PCMUStream::PCMUStream(UsageEnvironment& env, int sub, u_int8_t profile,u_int8_t
 	fPresentationTime.tv_usec = 0;
 	fuSecsPerFrame = (320/*samples-per-frame*/*1000000) / 8000/*samples-per-second*/;
 
-	m_StreamList = shm_stream_create("rtsp_pcmread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_READ);
+	m_StreamList = shm_stream_create("rtsp_pcmread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_AUDIO_MAX_SIZE, SHM_STREAM_READ);
 	if(m_StreamList == NULL)
 	{
 		LOGE_print("shm_stream_create Failed");
@@ -75,10 +75,9 @@ void PCMUStream::incomingDataHandler1()
 	unsigned char* pData;
 	unsigned int length;
 	int ret = shm_stream_get(m_StreamList, &info, &pData, &length);
-	
 	if(ret == 0)
     {	
-    	fFrameSize = info.pts;
+    	fFrameSize = info.length;
 		if(fFrameSize > fMaxSize)
 		{
 			fNumTruncatedBytes = fFrameSize - fMaxSize;
@@ -104,7 +103,7 @@ void PCMUStream::incomingDataHandler1()
 			fPresentationTime.tv_usec = uSeconds%1000000;
 			m_ref = info.pts;
 		}
-		LOGD_print("framer audio pts:%u fFrameSize:%d", info.pts, fFrameSize);	
+		LOGD_print("framer audio pts:%llu fFrameSize:%d", info.pts, fFrameSize);	
 		fDurationInMicroseconds = fuSecsPerFrame;
 		shm_stream_post(m_StreamList);
 		nextTask() = envir().taskScheduler().scheduleDelayedTask(0,(TaskFunc*)FramedSource::afterGetting, this);
@@ -133,12 +132,12 @@ PCMUServerMediaSubsession::~PCMUServerMediaSubsession()
 
 FramedSource* PCMUServerMediaSubsession::createNewStreamSource(unsigned /*clientSessionId*/, unsigned& estBitrate) 
 {
-	estBitrate = 96; // kbps, estimate
+	estBitrate = 64; // kbps, estimate
 	return PCMUStream::createNew(envir(), sub);
 }
 
 RTPSink* PCMUServerMediaSubsession::createNewRTPSink(Groupsock* rtpGroupsock,unsigned char rtpPayloadTypeIfDynamic,FramedSource* inputSource)
 {	
 	LOGD_print("enc_type E1_AENC_G711A");
-	return SimpleRTPSink::createNew(envir(), rtpGroupsock, 97, 8000, "audio", "PCMA", 1, False);//for test
+	return SimpleRTPSink::createNew(envir(), rtpGroupsock, 8, 8000, "audio", "PCMA", 1, False);//for test
 }

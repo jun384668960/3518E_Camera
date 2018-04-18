@@ -47,34 +47,70 @@ static HI_U32 u32AoVqeType = 1;
 
 static shm_stream_t* g_audiohandle = NULL;
 ////////////////////////////////////////////////////////////////
+typedef struct
+{
+	HI_S32 length;
+	HI_S64 pts;
+}slice_info_t;
 
 void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *pstStream)
 {
 	//do some thing
 	if(VeChn == 0)
 	{
-		LOGI_print("video %d %llu", VeChn, pstStream->pstPack[pstStream->u32PackCount-1].u64PTS);
+//		LOGI_print("video %d %llu", VeChn, pstStream->pstPack[pstStream->u32PackCount-1].u64PTS);
 
 		HI_S32 total_length = 0;
 		HI_S32 i;
-	    for (i = 0; i < pstStream->u32PackCount; i++)
+
+			
+#if 0
+		static FILE* h264 = NULL;
+		if(h264 == NULL)
+			h264 = fopen("./stream0.h264", "wb");
+
+		HI_S8 spsPps[128] = {0};
+		HI_S32 spsPps_len = 0;
+		for (i = 0; i < pstStream->u32PackCount; i++)
+		{
+			HI_U8* data = pstStream->pstPack[i].pu8Addr+pstStream->pstPack[i].u32Offset;
+			HI_S32 len = pstStream->pstPack[i].u32Len-pstStream->pstPack[i].u32Offset;
+			HI_S8 nalu_type = data[4] & 0x1f;
+			if(nalu_type == 7 || nalu_type == 8)
+			{
+				memcpy(spsPps + spsPps_len, data, len);
+				spsPps_len += len;
+			}
+			else if(nalu_type == 6 || nalu_type == 9)
+			{
+				slice_info_t info;
+				info.length = spsPps_len;
+				info.pts = pstStream->pstPack[0].u64PTS;
+				
+				fwrite(&info, sizeof(slice_info_t), 1, h264);
+				fwrite(spsPps, spsPps_len, 1, h264);
+				fflush(h264);
+			}
+			else
+			{
+				slice_info_t info;
+				info.length = len;
+				info.pts = pstStream->pstPack[i].u64PTS;
+				
+				fwrite(&info, sizeof(slice_info_t), 1, h264);
+				fwrite(data, len, 1, h264);
+				fflush(h264);
+			}
+		}
+		
+#else
+		for (i = 0; i < pstStream->u32PackCount; i++)
 	    {
 	    	HI_U8* data = pstStream->pstPack[i].pu8Addr+pstStream->pstPack[i].u32Offset;
 			HI_S32 len = pstStream->pstPack[i].u32Len-pstStream->pstPack[i].u32Offset;
 			memcpy(&g_frame[total_length], data, len);
 			total_length += len;
 	    }
-			
-#if 0
-		static FILE* h264 = NULL;
-		if(h264 == NULL)
-			h264 = fopen("./stream0.h264", "wb");
-		if(h264 != NULL)
-		{
-			fwrite(g_frame, total_length, 1, h264);
-			fflush(h264);
-		}
-#else
 		if(g_handle != NULL)
 		{
 			frame_info info;
@@ -93,7 +129,7 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 			}
 			else
 			{
-				LOGI_print("shm_stream_put video info.lenght:%d info.pts:%llu", info.length, info.pts);
+//				LOGI_print("shm_stream_put video info.lenght:%d info.pts:%llu", info.length, info.pts);
 			}
 		}
 #endif
@@ -103,7 +139,7 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 
 void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 {
-	LOGI_print("audio %d %llu %u", AeChn, pstStream->u64TimeStamp, pstStream->u32Len);
+//	LOGI_print("audio %d %llu %u", AeChn, pstStream->u64TimeStamp, pstStream->u32Len);
 	//gs_enPayloadType ???????????
 	if(AeChn == 0 && gs_enPayloadType == PT_G711A)
 	{
@@ -111,11 +147,21 @@ void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 		static FILE* g711a = NULL;
 		if(g711a == NULL)
 			g711a = fopen("./stream0.g711a", "wb");
-		if(h264 != NULL)
+
+		HI_U8* data = pstStream->pStream + 4;
+		HI_S32 len = pstStream->u32Len - 4;
+			
+		if(g711a != NULL)
 		{
-			fwrite(g_frame, total_length, 1, g711a);
+			slice_info_t info;
+			info.length = len;
+			info.pts = pstStream->u64TimeStamp;
+			
+			fwrite(&info, sizeof(slice_info_t), 1, g711a);
+			fwrite(data, len, 1, g711a);
 			fflush(g711a);
 		}
+
 #else
 		if(g_audiohandle != NULL)
 		{
@@ -132,7 +178,7 @@ void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 			}
 			else
 			{
-				LOGI_print("shm_stream_put audio info.lenght:%d info.pts:%llu", info.length, info.pts);
+//				LOGI_print("shm_stream_put audio info.lenght:%d info.pts:%llu", info.length, info.pts);
 			}
 		}
 #endif
@@ -779,8 +825,8 @@ HI_S32 SAMPLE_AUDIO_AiAenc(HI_VOID)
 
 int main()
 {
-	g_handle = shm_stream_create("write", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_WRITE);
-	g_audiohandle = shm_stream_create("write", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_WRITE);
+	g_handle = shm_stream_create("write", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_WRITE);
+	g_audiohandle = shm_stream_create("write", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_AUDIO_MAX_SIZE, SHM_STREAM_WRITE);
 
 	SAMPLE_VENC_1080P_CLASSIC();
 	SAMPLE_AUDIO_AiAenc();

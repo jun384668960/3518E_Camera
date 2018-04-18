@@ -33,9 +33,9 @@ static AUDIO_SAMPLE_RATE_E enInSampleRate  = AUDIO_SAMPLE_RATE_BUTT;
 static AUDIO_SAMPLE_RATE_E enOutSampleRate = AUDIO_SAMPLE_RATE_BUTT;
 static HI_U32 u32AencPtNumPerFrm = 0;
 /* 0: close, 1: open*/
-static HI_U32 u32AiVqeType = 1;  
+static HI_U32 u32AiVqeType = 0;  
 /* 0: close, 1: open*/
-static HI_U32 u32AoVqeType = 1;  
+static HI_U32 u32AoVqeType = 0;  
 
 
 #define SAMPLE_DBG(s32Ret)\

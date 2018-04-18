@@ -140,7 +140,6 @@ void on_accept_signaling_client(void *transport, void* user_data, unsigned short
 	tcp_turn* pHandle = get_tcp_turn_handle();
 	if(pHandle == NULL) return;
 
-	exec_cmd("sh /opt/ipnc/clearCached.sh&");
 	//最大连接数控制
 	int size = cmap_size(&pHandle->m_SigClients);
 	if( size > 5)
@@ -230,8 +229,6 @@ void on_av_connect_result(void *transport, void* user_data, int status)
 {
 	tcp_turn* pHandle = get_tcp_turn_handle();
 	if(pHandle == NULL) return;
-
-	exec_cmd("sh /opt/ipnc/clearCached.sh&");
 	
 	if(status == 0)	
 	{		

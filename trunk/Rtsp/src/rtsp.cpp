@@ -59,12 +59,12 @@ void *vMainStreamPorc(void *pro)
 
 //	if(1)
 //	{
-//		msms->addSubsession(PCMUServerMediaSubsession::createNew(*env, 0, reuseFirstSource));  
+		msms->addSubsession(PCMUServerMediaSubsession::createNew(*env, 0, reuseFirstSource));  
 //		msms1->addSubsession(PCMUServerMediaSubsession::createNew(*env, 0, reuseFirstSource));	
 //	}
 //	else
 //	{
-		msms->addSubsession(ADTSMainServerMediaSubsession::createNew(*env, 0, reuseFirstSource));  
+//		msms->addSubsession(ADTSMainServerMediaSubsession::createNew(*env, 0, reuseFirstSource));  
 //		msms1->addSubsession(ADTSMainServerMediaSubsession::createNew(*env, 0, reuseFirstSource));	
 //	}
 

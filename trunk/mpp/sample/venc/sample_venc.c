@@ -21,8 +21,6 @@ extern "C"{
 
 #include <time.h>
 #include <unistd.h>
-#include "hzk_bitmap.h"
-#include "charset_convert.h"
 
 VIDEO_NORM_E gs_enNorm = VIDEO_ENCODING_MODE_NTSC;
 
@@ -89,53 +87,6 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 		    }
 		}
 	}
-}
-
-
-HI_VOID *SAMPLE_RGN_UpdateBitmap(void *pData)
-{
-	RGN_HANDLE Handle;
-	BITMAP_S stBitmap;
-	HI_S32 s32Ret;
-	char t_str[1024] = {0};
-	
-	while(1)
-	{
-		char h0[1024] = {0}; 
-		
-		local_time_get(h0);
-		if(strcmp(t_str, h0) != 0)
-		{
-			char hz[1024] = {0};
-			size_t inLen = strlen(h0);
-			charset_convert_GB2312_HALF_TO_FULL(hz, 1024, h0, inLen );
-
-			///////////////////////////////////////////////////////////////////////
-			BITMAP_INFO_T info;
-			info.format = BMP_PIXEL_FORMAT_RGB_1555;//BMP_PIXEL_FORMAT_RGB_888;
-			hzk_bitmap_create(hz, HZK_FONT_16, 0xff, 0x00, 0, &info);
-
-			Handle = 0;
-			stBitmap.enPixelFormat = PIXEL_FORMAT_RGB_1555;
-			stBitmap.u32Width = info.width;
-			stBitmap.u32Height = info.height;
-			stBitmap.pData = info.pRGB;
-			
-			s32Ret = HI_MPI_RGN_SetBitMap(Handle,&stBitmap);
-			if (HI_SUCCESS != s32Ret)
-			{
-				printf("HI_MPI_RGN_SetBitMap error:%d\n",s32Ret);
-			}
-			
-			hzk_bitmap_destory(info);
-			///////////////////////////////////////////////////////////////////////
-			
-			strcpy(t_str, h0);
-		}
-
-		usleep(50*1000);
-	}
-	return HI_NULL;
 }
 
 HI_S32 SAMPLE_RGN_CreateOverlayForVenc(RGN_HANDLE Handle, HI_U32 u32Num)
@@ -348,11 +299,6 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
         goto END_VENC_1080P_CLASSIC_0;
     }
 
-	/******************************************
-     step 2.1: 
-    ******************************************/
-    SAMPLE_RGN_CreateOverlayForVenc(0, 0);
-
     /******************************************
      step 3: start vi dev & chn to capture
     ******************************************/
@@ -561,8 +507,6 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
 	    }
 	}
 
-	pthread_t g_stOsdUpdateThread = 0;
-	pthread_create(&g_stOsdUpdateThread, NULL, SAMPLE_RGN_UpdateBitmap, NULL);
     /******************************************
      step 6: stream venc process -- get stream, then save it to file. 
     ******************************************/
@@ -581,11 +525,6 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
      step 7: exit process
     ******************************************/
     SAMPLE_COMM_VENC_StopGetStream();
-
-	if(g_stOsdUpdateThread)
-	{
-		pthread_join(g_stOsdUpdateThread, NULL);
-	}
 	
 END_VENC_1080P_CLASSIC_5:
 	
@@ -638,7 +577,6 @@ END_VENC_1080P_CLASSIC_1:	//vi stop
     SAMPLE_COMM_VI_StopVi(&stViConfig);
 END_VENC_1080P_CLASSIC_0:	//system exit
 
-	SAMPLE_RGN_DestroyRegion(0, 0);
     SAMPLE_COMM_SYS_Exit();
     
     return s32Ret;    

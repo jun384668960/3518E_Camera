@@ -24,7 +24,7 @@ H264LiveVideoSubSource::H264LiveVideoSubSource(UsageEnvironment& env,
  	fPresentationTime.tv_sec  = 0;
 	fPresentationTime.tv_usec = 0;
 	
-	m_StreamList = shm_stream_create("rtsp_subread", "substream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_READ);
+	m_StreamList = shm_stream_create("rtsp_subread", "substream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_READ);
 	if(m_StreamList == NULL)
 	{
 		LOGE_print("shm_stream_create Failed");
