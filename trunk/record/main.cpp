@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+
 #include "MP4Encoder.h"
 #include "stream_manager.h"
 #include "stream_define.h"
@@ -45,7 +47,7 @@ int main(int argc, const char *argv[])
 	
 	shm_stream_t* audio_stream = shm_stream_create("rec_audioread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_AUDIO_MAX_SIZE, SHM_STREAM_READ);
 	shm_stream_t* main_stream = shm_stream_create("rec_mainread", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_READ);
-
+	unsigned char* pData = (unsigned char*)malloc(200*1024);
 	while(1)
 	{
 		MP4EncoderResult result;
@@ -66,7 +68,8 @@ int main(int argc, const char *argv[])
 			int ret = shm_stream_get(main_stream, &info, &frame, &length);
 			if(ret == 0)
 			{
-				result = WriteH264Data(encoder, frame, info);
+				memcpy(pData, frame, length);
+				result = WriteH264Data(encoder, pData, info);
 				shm_stream_post(main_stream);
 				if(result != MP4ENCODER_ENONE)
 				{
@@ -79,7 +82,8 @@ int main(int argc, const char *argv[])
 					ret = shm_stream_get(audio_stream, &info, &frame, &length);
 					if(ret == 0)
 					{
-						result = WriteALawData(encoder, frame, info);
+						memcpy(pData, frame, length);
+						result = WriteALawData(encoder, pData, info);
 						shm_stream_post(audio_stream);
 						if(result != MP4ENCODER_ENONE)
 						{
@@ -102,6 +106,7 @@ int main(int argc, const char *argv[])
 		encoder.MP4ReleaseFile();
 	}
 
+	free(pData);
 	if(main_stream != NULL)
 		shm_stream_destory(main_stream);
 	if(audio_stream != NULL)

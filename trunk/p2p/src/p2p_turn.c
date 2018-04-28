@@ -497,6 +497,7 @@ int do_data_av_send(unsigned char* data, unsigned int len, int id, int flag, p2p
 	if(pHandle == NULL) return -1;
 	
 	P2pHead* head = (P2pHead*)data;
+
 	int error;
 	int sended = p2p_transport_av_send(pHandle->m_pTransport, id, (char*)data, (int)len, flag ,mode, &error);
 	if(sended > 0)

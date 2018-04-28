@@ -32,7 +32,7 @@ void* thread_p2p_vsnd(void* param)
 {	
 	gos_frame_head head;
 	memset(&head, 0x0, sizeof(gos_frame_head));
-	unsigned char pData[200*1024] = {0};
+	unsigned char* pData = (unsigned char*)malloc(200*1024);
 	unsigned int vframe_no = 0;
 	p2p_handle* handle = (p2p_handle*)param;
 	shm_stream_t* main_stream = shm_stream_create("p2p_mainread", "mainstream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_READ);
@@ -63,7 +63,10 @@ void* thread_p2p_vsnd(void* param)
 				p2p_handle_write(handle, (unsigned char*)pData, length+sizeof(gos_frame_head), is_video, info.pts/1000, info.key == 1? 0 : 1);
 			}
 			shm_stream_post(main_stream);
-//			LOGI_print("!main_stream remains:%d", shm_stream_remains(main_stream));
+			int remains = shm_stream_remains(main_stream);
+			if(remains > 6)
+				LOGI_print("main_stream remains:%d", shm_stream_remains(main_stream));
+
 		}
 		else
 		{
@@ -96,7 +99,7 @@ int main()
 	shm_stream_t* audio_stream = shm_stream_create("p2p_audioread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_AUDIO_MAX_SIZE, SHM_STREAM_READ);
 	gos_frame_head head;
 	memset(&head, 0x0, sizeof(gos_frame_head));
-	unsigned char pData[200*1024] = {0};
+	unsigned char* pData = (unsigned char*)malloc(200*1024);
 	unsigned int vframe_no = 0;
 	unsigned int aframe_no = 0;
 	pthread_t tid_vsnd;
@@ -107,7 +110,7 @@ int main()
 	}
 	while(1)
 	{
-		int is_video = SND_VIDEO_HD;
+		int is_video = SND_AUDIO;
 		int is_key;
 
 		frame_info info;
@@ -132,7 +135,9 @@ int main()
 				p2p_handle_write(handle, (unsigned char*)pData, length+sizeof(gos_frame_head), is_video, info.pts/1000, 1);
 			}
 			shm_stream_post(audio_stream);
-//			LOGI_print("audio_stream remains:%d", shm_stream_remains(audio_stream));
+			int remains = shm_stream_remains(audio_stream);
+			if(remains > 6)
+				LOGI_print("audio_stream remains:%d", shm_stream_remains(audio_stream));
 		}
 		else
 		{

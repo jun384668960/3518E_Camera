@@ -48,6 +48,7 @@ int unix_socket_reconn(unix_socket_t* sock);
 int unix_socket_conn(unix_socket_t* sock, const char *servername);
 int unix_socket_clnt_send(unix_socket_t* sock, char* data, unsigned int length);
 int unix_socket_send(char* data, unsigned int length, int fd);
+int unix_socket_server_broadcast(unix_socket_t* sock, char* data, unsigned int length, int fd);
 
 //private
 int unix_socket_server_open(unix_socket_t* sock, char* servername);

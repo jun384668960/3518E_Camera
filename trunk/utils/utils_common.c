@@ -27,7 +27,7 @@ void localtime_mp4name_get(char* filename)
 	tzset();
 	time(&timep);
 	p=localtime(&timep);
-	sprintf(filename,"%d-%02d-%02d %02d-%02d-%02d.mp4", (1900+p->tm_year),(1+p->tm_mon), p->tm_mday
+	sprintf(filename,"/mnt/sd/%d-%02d-%02d %02d-%02d-%02d.mp4", (1900+p->tm_year),(1+p->tm_mon), p->tm_mday
 		, p->tm_hour, p->tm_min, p->tm_sec);
 
 }

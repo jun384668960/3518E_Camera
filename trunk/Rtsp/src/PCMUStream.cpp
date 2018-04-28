@@ -103,7 +103,7 @@ void PCMUStream::incomingDataHandler1()
 			fPresentationTime.tv_usec = uSeconds%1000000;
 			m_ref = info.pts;
 		}
-		LOGD_print("framer audio pts:%llu fFrameSize:%d", info.pts, fFrameSize);	
+		LOGT_print("framer audio pts:%llu fFrameSize:%d", info.pts, fFrameSize);	
 		fDurationInMicroseconds = fuSecsPerFrame;
 		shm_stream_post(m_StreamList);
 		nextTask() = envir().taskScheduler().scheduleDelayedTask(0,(TaskFunc*)FramedSource::afterGetting, this);

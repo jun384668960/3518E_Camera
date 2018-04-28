@@ -10,7 +10,6 @@ int main(int argc, char* argv[])
 
 	while(1)
 	{
-		LOGD_print("===================");
 		usleep(1000*1000);
 	}
 	

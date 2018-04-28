@@ -1,11 +1,10 @@
-CROSS := arm-hisiv300-linux-
+#CROSS := arm-hisiv300-linux-
 CC := $(CROSS)gcc
 CFLAG := -lpthread -I../
-BINS := stream_write stream_read1 stream_read2
-#unix_socket_svr unix_socket_clnt
-#unix_socket_server unix_socket_client 
-#stream_write stream_read1 stream_read2 ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
-#ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
+#BINS := stream_write stream_read1 stream_read2
+BINS := unix_socket_svr unix_socket_clnt
+#BINS := stream_write stream_read1 stream_read2 ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
+#BINS := ipc_utils_test shm_utils_write shm_utils_read1 shm_utils_read2 ipc_utils_clnt ipc_utils_clnt2 
 SRCS := $(wildcard ../*.c)
 OBJS := $(wildcard ../*.o ./*.o)
 
@@ -24,7 +23,7 @@ shm_utils_write:
 	$(CC) shm_utils_write.c ../ipc_utils.c ../ipc_shm_utils.c ../utils_log.c -o shm_utils_write $(CFLAG)
 
 shm_utils_read1:
-	$(CC) -g3 shm_utils_read1.c ../ipc_utils.c ../ipc_shm_utils.c ../utils_log.c -o shm_utils_read1 $(CFLAG)
+	$(CC) shm_utils_read1.c ../ipc_utils.c ../ipc_shm_utils.c ../utils_log.c -o shm_utils_read1 $(CFLAG)
 
 shm_utils_read2:
 	$(CC) shm_utils_read2.c ../ipc_utils.c ../ipc_shm_utils.c ../utils_log.c -o shm_utils_read2 $(CFLAG)

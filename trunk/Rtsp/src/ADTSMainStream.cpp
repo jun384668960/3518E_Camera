@@ -57,7 +57,7 @@ ADTSMainSource::ADTSMainSource(UsageEnvironment& env, int sub, u_int8_t profile,
 	audioSpecificConfig[1] = (samplingFrequencyIndex<<7) | (channelConfiguration<<3);
 	sprintf(fConfigStr, "%02X%02x", audioSpecificConfig[0], audioSpecificConfig[1]);
 
-	m_StreamList = shm_stream_create("rtsp_pcmread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_READ);
+	m_StreamList = shm_stream_create("rtsp_pcmread", "audiostream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_READ);
 	if(m_StreamList == NULL)
 	{
 		LOGE_print("shm_stream_create Failed");
@@ -127,7 +127,7 @@ void ADTSMainSource::incomingDataHandler1()
 			m_ref = info.pts;
 		}
 		shm_stream_post(m_StreamList);
-		LOGD_print("framer audio pts:%u fFrameSize:%d", info.pts, fFrameSize);
+		LOGT_print("framer audio pts:%u fFrameSize:%d", info.pts, fFrameSize);
 		fDurationInMicroseconds = fuSecsPerFrame;
 		nextTask() = envir().taskScheduler().scheduleDelayedTask(0,(TaskFunc*)FramedSource::afterGetting, this);
 		

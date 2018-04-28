@@ -9,7 +9,7 @@
 
 int main()
 {
-	shm_stream_t* handle = shm_stream_create("read2", "stream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_MAX_SIZE, SHM_STREAM_READ);
+	shm_stream_t* handle = shm_stream_create("read2", "stream", STREAM_MAX_USER, STREAM_MAX_FRAMES, STREAM_VIDEO_MAX_SIZE, SHM_STREAM_READ);
 	if(handle == NULL)
 	{
 		LOGE_print("shm_stream_create error");

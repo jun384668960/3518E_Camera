@@ -1,0 +1,5 @@
+1. 清理cache				sync; echo 3 > /proc/sys/vm/drop_caches
+2. 热插拔sd的mount umount	echo /sbin/mdev>/proc/sys/kernel/hotplug; mdev -s; /etc/mdev.conf文件
+3. wifi工作模式切换
+4. 进程监测和启动
+5. 时间同步  				ntpd -p ntp1.aliyun.com

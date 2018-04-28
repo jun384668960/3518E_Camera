@@ -133,19 +133,22 @@ int  log_ctrl_print(log_ctrl* log, int level, char* t, ...)
 {
 	if(log == NULL)
 	{
-		struct timeval v;
-		gettimeofday(&v, 0);
-		struct tm *p = localtime(&v.tv_sec);
-		char fmt[256]; //限制t不能太大
-		sprintf(fmt, "%s%04d/%02d/%02d %02d:%02d:%02d.%03d %s %s\n"NONE,level==LOG_TRACE? "":(level==LOG_DEBUG? LIGHT_GREEN:(level==LOG_INFO? LIGHT_CYAN:(level==LOG_WARN?YELLOW:LIGHT_RED)))
-				, 1900 + p->tm_year, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, (int)(v.tv_usec/1000)
-				, level==LOG_TRACE? "TRACE":(level==LOG_DEBUG? "DEBUG":(level==LOG_INFO? "!INFO":(level==LOG_WARN? "!WARN":"ERROR"))), t);
+		if(level <= s_log_level)
+		{
+			struct timeval v;
+			gettimeofday(&v, 0);
+			struct tm *p = localtime(&v.tv_sec);
+			char fmt[256]; //限制t不能太大
+			sprintf(fmt, "%s%04d/%02d/%02d %02d:%02d:%02d.%03d %s %s\n"NONE,level==LOG_TRACE? "":(level==LOG_DEBUG? LIGHT_GREEN:(level==LOG_INFO? LIGHT_CYAN:(level==LOG_WARN?YELLOW:LIGHT_RED)))
+					, 1900 + p->tm_year, 1 + p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, (int)(v.tv_usec/1000)
+					, level==LOG_TRACE? "TRACE":(level==LOG_DEBUG? "DEBUG":(level==LOG_INFO? "!INFO":(level==LOG_WARN? "!WARN":"ERROR"))), t);
 
-		va_list params;
-		va_start(params, t);
-		vfprintf(stdout, fmt, params);
-		va_end(params);
-		fflush(stdout);
+			va_list params;
+			va_start(params, t);
+			vfprintf(stdout, fmt, params);
+			va_end(params);
+			fflush(stdout);
+		}
 		
 		return 0;
 	}

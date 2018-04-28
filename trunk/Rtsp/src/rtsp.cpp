@@ -10,6 +10,8 @@
 #include <pthread.h>
 #include "rtsp.h"
 #include "utils_log.h"
+#include "utils_common.h"
+
 #ifdef __cplusplus
 extern "C"{
 #endif
@@ -52,7 +54,7 @@ void *vMainStreamPorc(void *pro)
 	ServerMediaSession* msms = ServerMediaSession::createNew(*env, streamName, streamName,descriptionString);
 //	ServerMediaSession* msms1 = ServerMediaSession::createNew(*env, streamName1, streamName1,descriptionString);
 
-	OutPacketBuffer::maxSize = 500000;
+	OutPacketBuffer::maxSize = 256000;
 
 		msms->addSubsession(H264LiveVideoServerMediaSubsession::createNew(*env, reuseFirstSource));
 //		msms1->addSubsession(H264SubLiveVideoServerMediaSubsession::createNew(*env, reuseFirstSource));
@@ -97,7 +99,7 @@ void RTSPInit()
 	LOGD_print("RTSPInit");
 	if(MianStreamTh == 0)
 	{
-		int err = pthread_create(&MianStreamTh, NULL, vMainStreamPorc,NULL);
+		int err = pthread_create_4m(&MianStreamTh, vMainStreamPorc,NULL);
 		if(err != 0)
 		{
 			fprintf(stderr, "%s\n", strerror(err));

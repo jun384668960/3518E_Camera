@@ -12,6 +12,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include "unix_socket.h"
+#include "utils_common.h"
 #include "utils_log.h"
 
 unix_socket_t* unix_socket_create(UNIX_SOCKET_MODE mode, int clnts, char* servername, char* clntname, recv_callback on_recv, status_callback on_status)
@@ -113,7 +114,8 @@ int unix_socket_accept(unix_socket_t* sock)
 		return 0;
 	
 	sock->recv_stop = 0;
-	if(pthread_create(&sock->recv_tid, NULL, unix_socket_server_recv, sock) != 0)
+	//if(pthread_create(&sock->recv_tid, NULL, unix_socket_server_recv, sock) != 0)
+	if(pthread_create_4m(&sock->recv_tid, unix_socket_server_recv, sock) != 0)
 	{
 		LOGE_print("pthread_create unix_socket_server_recv errno:%d", errno);
 		return -1;
@@ -159,7 +161,8 @@ int unix_socket_conn(unix_socket_t* sock, const char *servername)
 		sock->status = 1;
 		sock->recv_stop = 0;
 		if(sock->recv_tid != 0) return 0;
-		if(pthread_create(&sock->recv_tid, NULL, unix_socket_client_recv, sock) != 0)
+//		if(pthread_create(&sock->recv_tid, NULL, unix_socket_client_recv, sock) != 0)
+		if(pthread_create_4m(&sock->recv_tid, unix_socket_client_recv, sock) != 0)
 		{
 			LOGE_print("pthread_create unix_socket_server_recv errno:%d", errno);
 			return -1;
@@ -192,6 +195,20 @@ int unix_socket_send(char* data, unsigned int length, int fd)
 	int size = send(fd, data, length, 0);
 	
 	return size;
+}
+
+int unix_socket_server_broadcast(unix_socket_t* sock, char* data, unsigned int length, int fd)
+{
+	int i;
+	for (i = 0; i < sock->max_clnt; i++)
+	{
+		if (sock->clnt_array[i] != 0 && sock->clnt_array[i] != fd)
+		{
+			unix_socket_send(data, length, sock->clnt_array[i]);
+		}
+	}
+
+	return 0;
 }
 
 int unix_socket_server_open(unix_socket_t* sock, char* servername)
@@ -283,7 +300,6 @@ void* unix_socket_server_recv(void* arg)
 		{
 			if (sock->clnt_array[i] != 0)
 			{
-				LOGW_print("==================== %d", sock->clnt_array[i]);
 				FD_SET(sock->clnt_array[i], &sock->fdsr);
 				
 				if(sock->clnt_array[i] > max) 
@@ -330,9 +346,11 @@ void* unix_socket_server_recv(void* arg)
 						if (sock->clnt_array[i] == 0)
 						{
 							sock->clnt_array[i] = clnt;
+							sock->cur_clnts++;
 							break;
 						}
 					}
+					LOGD_print("accpet clnt:%d cur_clnts:%d",clnt, sock->cur_clnts);
 				}
 				else
 				{
@@ -353,6 +371,7 @@ void* unix_socket_server_recv(void* arg)
 				if (FD_ISSET(sock->clnt_array[i], &sock->fdsr))
 				{
 					//接收数据
+					memset(sock->buffer, 0, sock->max_buf_size);
 					ret = recv(sock->clnt_array[i], sock->buffer, sock->max_buf_size, 0);
 					if (ret <= 0) //接收数据出错
 					{		
@@ -361,7 +380,8 @@ void* unix_socket_server_recv(void* arg)
 						if(sock->on_status != NULL)
 							(sock->on_status)(sock, sock->clnt_array[i], ret);
 						sock->clnt_array[i] = 0;
-						LOGE_print("client[%d] close error:%d", i, ret);
+						sock->cur_clnts--;
+						LOGE_print("client[%d] closed, cur_clnts:%d", i, sock->cur_clnts);
 					}
 					else
 					{
@@ -412,6 +432,7 @@ void* unix_socket_client_recv(void* arg)
 		if (FD_ISSET(sock->connfd, &sock->fdsr))
 		{
 			//接收数据
+			memset(sock->buffer, 0, sock->max_buf_size);
 			ret = recv(sock->connfd, sock->buffer, sock->max_buf_size, 0);
 			if (ret == 0) //接收数据出错
 			{		
