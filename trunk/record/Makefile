@@ -1,6 +1,6 @@
 CROSS := arm-hisiv300-linux-
 CC := $(CROSS)g++
-CFLAG := -Wno-write-strings -lpthread -lmp4v2 -L./lib \
+CFLAG := -Wno-write-strings -lpthread -lmp4v2 -lmp4 -L./lib \
 		-I../common -I../utils -I./include \
 		
 BINS := mp4file

@@ -23,14 +23,14 @@
 #include "utils_common.h"
 
 ////////////////////////////////////////////////////////////////
-VIDEO_NORM_E gs_enNorm = VIDEO_ENCODING_MODE_NTSC;
-HI_U32 g_u32BlkCnt = 4;
+static VIDEO_NORM_E gs_enNorm = VIDEO_ENCODING_MODE_NTSC;
+static HI_U32 g_u32BlkCnt = 4;
 
 static shm_stream_t* g_handle = NULL;
 static unsigned char g_frame[256*1024];
 
 ////////////////////////////////////////////////////////////////
-static PAYLOAD_TYPE_E gs_enPayloadType = PT_G711A;
+static PAYLOAD_TYPE_E gs_enPayloadType = PT_AAC;//PT_G711A;
 
 //static HI_BOOL gs_bMicIn = HI_FALSE;
 
@@ -59,51 +59,9 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 	if(VeChn == 0)
 	{
 //		LOGI_print("video %d %llu", VeChn, pstStream->pstPack[pstStream->u32PackCount-1].u64PTS);
-
 		HI_S32 total_length = 0;
 		HI_S32 i;
 
-			
-#if 0
-		static FILE* h264 = NULL;
-		if(h264 == NULL)
-			h264 = fopen("./stream0.h264", "wb");
-
-		HI_S8 spsPps[128] = {0};
-		HI_S32 spsPps_len = 0;
-		for (i = 0; i < pstStream->u32PackCount; i++)
-		{
-			HI_U8* data = pstStream->pstPack[i].pu8Addr+pstStream->pstPack[i].u32Offset;
-			HI_S32 len = pstStream->pstPack[i].u32Len-pstStream->pstPack[i].u32Offset;
-			HI_S8 nalu_type = data[4] & 0x1f;
-			if(nalu_type == 7 || nalu_type == 8)
-			{
-				memcpy(spsPps + spsPps_len, data, len);
-				spsPps_len += len;
-			}
-			else if(nalu_type == 6 || nalu_type == 9)
-			{
-				slice_info_t info;
-				info.length = spsPps_len;
-				info.pts = pstStream->pstPack[0].u64PTS;
-				
-				fwrite(&info, sizeof(slice_info_t), 1, h264);
-				fwrite(spsPps, spsPps_len, 1, h264);
-				fflush(h264);
-			}
-			else
-			{
-				slice_info_t info;
-				info.length = len;
-				info.pts = pstStream->pstPack[i].u64PTS;
-				
-				fwrite(&info, sizeof(slice_info_t), 1, h264);
-				fwrite(data, len, 1, h264);
-				fflush(h264);
-			}
-		}
-		
-#else
 		for (i = 0; i < pstStream->u32PackCount; i++)
 	    {
 	    	HI_U8* data = pstStream->pstPack[i].pu8Addr+pstStream->pstPack[i].u32Offset;
@@ -111,6 +69,11 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 			memcpy(&g_frame[total_length], data, len);
 			total_length += len;
 	    }
+
+//		static FILE* pH264 = NULL;
+//		if(pH264==NULL) pH264=fopen("test.264", "wb");
+//		if(pH264!=NULL) fwrite(g_frame, 1, total_length, pH264);
+		
 		if(g_handle != NULL)
 		{
 			frame_info info;
@@ -132,7 +95,6 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 //				LOGI_print("shm_stream_put video info.lenght:%d info.pts:%llu", info.length, info.pts);
 			}
 		}
-#endif
 	}
 }
 
@@ -140,38 +102,31 @@ void COMM_VENC_UseStream(VENC_CHN VeChn, PAYLOAD_TYPE_E enType, VENC_STREAM_S *p
 void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 {
 //	LOGI_print("audio %d %llu %u", AeChn, pstStream->u64TimeStamp, pstStream->u32Len);
-	//gs_enPayloadType ???????????
-	if(AeChn == 0 && gs_enPayloadType == PT_G711A)
+//	static FILE* pAAC = NULL;
+//	if(pAAC==NULL) pAAC=fopen("test.aac", "wb");
+//	if(pAAC!=NULL) fwrite(pstStream->pStream, 1, pstStream->u32Len, pAAC);
+	if(AeChn == 0)
 	{
-#if 0
-		static FILE* g711a = NULL;
-		if(g711a == NULL)
-			g711a = fopen("./stream0.g711a", "wb");
-
-		HI_U8* data = pstStream->pStream + 4;
-		HI_S32 len = pstStream->u32Len - 4;
-			
-		if(g711a != NULL)
-		{
-			slice_info_t info;
-			info.length = len;
-			info.pts = pstStream->u64TimeStamp;
-			
-			fwrite(&info, sizeof(slice_info_t), 1, g711a);
-			fwrite(data, len, 1, g711a);
-			fflush(g711a);
-		}
-
-#else
 		if(g_audiohandle != NULL)
 		{
+			HI_U8 *pData;
 			frame_info info;
 			info.type = gs_enPayloadType;
 			info.key = 1;
 			info.pts = pstStream->u64TimeStamp;
-			info.length = pstStream->u32Len - 4;
 			
-			int ret = shm_stream_put(g_audiohandle, info, pstStream->pStream + 4, info.length);
+			if( gs_enPayloadType == PT_G711A)
+			{
+				pData = pstStream->pStream + 4;
+				info.length = pstStream->u32Len - 4;
+			}
+			else
+			{
+				pData = pstStream->pStream;
+				info.length = pstStream->u32Len;
+			}
+			
+			int ret = shm_stream_put(g_audiohandle, info, pData, info.length);
 			if(ret != 0)
 			{
 //				LOGE_print("shm_stream_put error");
@@ -181,7 +136,6 @@ void COMM_AENC_UseStream(HI_S32 AeChn, AUDIO_STREAM_S *pstStream)
 //				LOGI_print("shm_stream_put audio info.lenght:%d info.pts:%llu", info.length, info.pts);
 			}
 		}
-#endif
 	}
 }
 
@@ -202,7 +156,7 @@ HI_VOID *SAMPLE_RGN_UpdateBitmap(void *pData)
 			///////////////////////////////////////////////////////////////////////
 			BITMAP_INFO_T info;
 			hzk_bitmap_create(0, 32, 14, time, 
-				0xFFFF,0xFC00,0x81FF, &info);
+				0xFFFF,0x8000,0x81FF, &info);
 
 			Handle = 0;
 			stBitmap.enPixelFormat = PIXEL_FORMAT_RGB_1555;
@@ -267,7 +221,7 @@ HI_S32 SAMPLE_RGN_CreateOverlayForVenc(RGN_HANDLE Handle, HI_U32 u32Num)
 
     stChnAttr.unChnAttr.stOverlayChn.stInvertColor.stInvColArea.u32Height = 16*(u32Num%2+1);
     stChnAttr.unChnAttr.stOverlayChn.stInvertColor.stInvColArea.u32Width  = 16*(u32Num%2+1);
-    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.u32LumThresh = 128;
+    stChnAttr.unChnAttr.stOverlayChn.stInvertColor.u32LumThresh = 64;
     stChnAttr.unChnAttr.stOverlayChn.stInvertColor.enChgMod     = LESSTHAN_LUM_THRESH;
     stChnAttr.unChnAttr.stOverlayChn.stInvertColor.bInvColEn    = HI_FALSE;
     
@@ -305,7 +259,7 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
 {
     PAYLOAD_TYPE_E enPayLoad[3]= {PT_H264, PT_H264,PT_H264};
     PIC_SIZE_E enSize[3] = {PIC_HD1080, PIC_VGA,PIC_QVGA};
-	HI_U32 u32Profile = 0;
+	HI_U32 u32Profile = 2;
 	
     VB_CONF_S stVbConf;
     SAMPLE_VI_CONFIG_S stViConfig = {0};
@@ -445,7 +399,7 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
 	    stVpssChnMode.enPixelFormat  = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
 	    stVpssChnMode.u32Width       = stSize.u32Width;
 	    stVpssChnMode.u32Height      = stSize.u32Height;
-	    stVpssChnMode.enCompressMode = COMPRESS_MODE_SEG;
+	    stVpssChnMode.enCompressMode = COMPRESS_MODE_NONE;//COMPRESS_MODE_SEG;
 	    memset(&stVpssChnAttr, 0, sizeof(stVpssChnAttr));
 	    stVpssChnAttr.s32SrcFrameRate = -1;
 	    stVpssChnAttr.s32DstFrameRate = -1;
@@ -471,7 +425,7 @@ HI_S32 SAMPLE_VENC_1080P_CLASSIC(HI_VOID)
 	    stVpssChnMode.enPixelFormat   = PIXEL_FORMAT_YUV_SEMIPLANAR_420;
 	    stVpssChnMode.u32Width        = stSize.u32Width;
 	    stVpssChnMode.u32Height       = stSize.u32Height;
-	    stVpssChnMode.enCompressMode  = COMPRESS_MODE_SEG;
+	    stVpssChnMode.enCompressMode  = COMPRESS_MODE_NONE;//COMPRESS_MODE_SEG;
 	    stVpssChnAttr.s32SrcFrameRate = -1;
 	    stVpssChnAttr.s32DstFrameRate = -1;
 	    s32Ret = SAMPLE_COMM_VPSS_EnableChn(VpssGrp, VpssChn, &stVpssChnAttr, &stVpssChnMode, HI_NULL);
@@ -690,6 +644,12 @@ HI_S32 SAMPLE_AUDIO_AiAenc(HI_VOID)
     stAioAttr.u32ChnCnt      = 1;
     stAioAttr.u32ClkSel      = 0;
 #endif
+    if(gs_enPayloadType == PT_AAC)
+    {
+    	stAioAttr.u32PtNumPerFrm = 1024;
+		HI_MPI_AENC_AacInit();
+	}	
+
     gs_bAioReSample = HI_FALSE;
     enInSampleRate  = AUDIO_SAMPLE_RATE_BUTT;
     enOutSampleRate = AUDIO_SAMPLE_RATE_BUTT;
@@ -719,6 +679,7 @@ HI_S32 SAMPLE_AUDIO_AiAenc(HI_VOID)
     /********************************************
       step 3: start Aenc
     ********************************************/
+	
     s32AencChnCnt = 1;
     s32Ret = SAMPLE_COMM_AUDIO_StartAenc(s32AencChnCnt, u32AencPtNumPerFrm, gs_enPayloadType);
     if (s32Ret != HI_SUCCESS)

@@ -9,7 +9,7 @@
 #define INVALID_PTS 0xFFFFFFFFFFFFFFFF
 /* Warning: Followings are magic data originally */
 #define DEFAULT_VIDEO_TRACK_NUM 3
-#define DEFAULT_VIDEO_PROFILE_LEVEL 1
+#define DEFAULT_VIDEO_PROFILE_LEVEL 2
 #define DEFAULT_AUDIO_PROFILE_LEVEL 2
 
 MP4Encoder::MP4Encoder(void)
@@ -46,7 +46,7 @@ MP4EncoderResult MP4Encoder::MP4CreateFile(const char *sFileName,
 MP4EncoderResult MP4Encoder::MP4AddH264Track(const uint8_t *sData, int nSize,
 	int nWidth, int nHeight, int nFrameRate/* = 25 */)
 {
-	int sps, pps;
+	int sps, pps, nalu;
 	for (sps = 0; sps < nSize;)
 		if (sData[sps++] == 0x00 && sData[sps++] == 0x00 && sData[sps++] == 0x00
 			&& sData[sps++] == 0x01)
@@ -54,6 +54,10 @@ MP4EncoderResult MP4Encoder::MP4AddH264Track(const uint8_t *sData, int nSize,
 	for (pps = sps; pps < nSize;)
 		if (sData[pps++] == 0x00 && sData[pps++] == 0x00 && sData[pps++] == 0x00
 			&& sData[pps++] == 0x01)
+			break;
+	for (nalu = pps; nalu < nSize;)
+		if (sData[nalu++] == 0x00 && sData[nalu++] == 0x00 && sData[nalu++] == 0x00
+			&& sData[nalu++] == 0x01)
 			break;
 	if (sps >= nSize || pps >= nSize)
 		return MP4ENCODER_ERROR(MP4ENCODER_E_ADD_VIDEO_TRACK);
@@ -68,7 +72,17 @@ MP4EncoderResult MP4Encoder::MP4AddH264Track(const uint8_t *sData, int nSize,
 	MP4AddH264SequenceParameterSet(m_hFile, m_videoTrack, sData + sps,
 		pps - sps - 4);
 	MP4AddH264PictureParameterSet(m_hFile, m_videoTrack, sData + pps,
-		nSize - pps);
+		nalu - pps - 4);
+	for(int i=0; i<pps - sps - 4; i++)
+	{
+		printf("%02x ", sData[sps + i]);
+	}
+	printf("\n");
+	for(int i=0; i<nalu - pps - 4; i++)
+	{
+		printf("%02x ", sData[pps + i]);
+	}
+	printf("\n");
 
 	return MP4ENCODER_ENONE;
 }
@@ -99,10 +113,10 @@ MP4EncoderResult MP4Encoder::MP4AddALawTrack(const uint8_t *sData, int nSize)
 		return MP4ENCODER_ERROR(MP4ENCODER_E_ADD_AUDIO_TRACK);
 	
 	MP4SetAudioProfileLevel(m_hFile, DEFAULT_AUDIO_PROFILE_LEVEL);
-	bool a = MP4SetTrackIntegerProperty( m_hFile,  m_audioTrack,
-                "mdia.minf.stbl.stsd.alaw.channels", 1);  //Set a single audio channel
-	if(!a)
-		return MP4ENCODER_ERROR(MP4ENCODER_E_ADD_AUDIO_TRACK);
+//	bool a = MP4SetTrackIntegerProperty( m_hFile,  m_audioTrack,
+//                "mdia.minf.stbl.stsd.alaw.channels", 1);  //Set a single audio channel
+//	if(!a)
+//		return MP4ENCODER_ERROR(MP4ENCODER_E_ADD_AUDIO_TRACK);
 
 	return MP4ENCODER_ENONE;
 
@@ -111,14 +125,14 @@ MP4EncoderResult MP4Encoder::MP4AddALawTrack(const uint8_t *sData, int nSize)
 MP4EncoderResult MP4Encoder::MP4WriteH264Data(uint8_t *sData, int nSize,
 	uint64_t u64PTS)
 {
-	//if (nSize < MIN_FRAME_SIZE)
-	if (nSize <=0)
+	if (nSize < MIN_FRAME_SIZE)
 		return MP4ENCODER_ENONE;
 	bool result = false;
 	sData[0] = (nSize - 4) >> 24;
 	sData[1] = (nSize - 4) >> 16;
 	sData[2] = (nSize - 4) >> 8;
 	sData[3] = nSize - 4;
+
 	if (m_bFirstVideo)
 	{
 		if (m_u64FirstPTS > u64PTS)
@@ -146,8 +160,7 @@ MP4EncoderResult MP4Encoder::MP4WriteH264Data(uint8_t *sData, int nSize,
 MP4EncoderResult MP4Encoder::MP4WriteAACData(const uint8_t *sData, int nSize,
 	uint64_t u64PTS)
 {
-	//if (nSize < MIN_FRAME_SIZE)
-	if (nSize <= 0)
+	if (nSize < MIN_FRAME_SIZE)
 		return MP4ENCODER_ENONE;
 	bool result = false;
 	if (m_bFirstAudio)

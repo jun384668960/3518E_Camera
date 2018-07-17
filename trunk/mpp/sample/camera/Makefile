@@ -6,6 +6,13 @@ include ../Makefile.param
 #     include $(SAMPLE_PARAM_FILE)
 #endif
 
+AACENC_DIR:=$(PWD)/aacenc
+CFLAGS += -I$(AACENC_DIR)/include -L$(AACENC_DIR)/lib
+AUDIO_LIBA += -laacenc
+AACDEC_DIR:=$(PWD)/aacdec
+CFLAGS += -I$(AACDEC_DIR)/include -L$(AACDEC_DIR)/lib
+AUDIO_LIBA += -laacdec
+
 # target source
 SRC  := $(wildcard *.c) 
 OBJ  := $(SRC:%.c=%.o)

@@ -19,6 +19,8 @@
 
 #include "sample_comm.h"
 #include "acodec.h"
+#include "audio_aac_adp.h"
+
 #ifdef HI_ACODEC_TYPE_TLV320AIC31
 #include "tlv320aic31.h"
 #endif
@@ -1458,7 +1460,8 @@ HI_S32 SAMPLE_COMM_AUDIO_StartAenc(HI_S32 s32AencChnCnt, HI_U32 u32AencPtNumPerF
     AENC_ATTR_G711_S stAencG711;
     AENC_ATTR_G726_S stAencG726;
     AENC_ATTR_LPCM_S stAencLpcm;
-    
+    AENC_ATTR_AAC_S stAencAac;
+	
     /* set AENC chn attr */
     
     stAencAttr.enType = enType;
@@ -1483,6 +1486,17 @@ HI_S32 SAMPLE_COMM_AUDIO_StartAenc(HI_S32 s32AencChnCnt, HI_U32 u32AencPtNumPerF
     {
         stAencAttr.pValue = &stAencLpcm;
     }
+	else if (PT_AAC == stAencAttr.enType)
+	{
+		stAencAttr.pValue = &stAencAac;
+		stAencAac.enAACType = AAC_TYPE_AACLC;
+        stAencAac.enBitRate = AAC_BPS_8K;
+        stAencAac.enBitWidth = AUDIO_BIT_WIDTH_16;
+        stAencAac.enSmpRate = AUDIO_SAMPLE_RATE_8000;
+        stAencAac.enSoundMode = AUDIO_SOUND_MODE_MONO;
+        stAencAac.enTransType = AAC_TRANS_TYPE_ADTS; //v200新加
+        stAencAac.s16BandWidth = 0;		 //v200新加
+	}
     else
     {
         printf("%s: invalid aenc payload type:%d\n", __FUNCTION__, stAencAttr.enType);
